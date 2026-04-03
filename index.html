@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Music Mandala</title>
+  <link rel="stylesheet" href="/src/styles.css">
+</head>
+<body>
+  <div class="controls">
+    <button id="play">Play</button>
+    <button id="stop">Stop</button>
+    <div class="bpm-control">
+      <label>BPM:</label>
+      <span id="bpm-value" class="bpm-value">120</span>
+      <input type="range" id="bpm" min="60" max="180" value="120">
+    </div>
+  </div>
+
+  <div class="instruments" id="instruments">
+    <!-- Instruments will be added here by JS -->
+  </div>
+
+  <div class="editor-window" id="editor-window">
+    <button class="close-btn" id="close-editor">×</button>
+    <h2 id="editor-title">Edit Instrument</h2>
+    <div class="editor-content">
+      <div class="loop-editor" id="editor-loop"></div>
+    </div>
+  </div>
+
+  <div id="mandala-container"></div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
