@@ -11,3 +11,8 @@ export type Song = {
   instruments: Instrument[];
   bpm: number;
 };
+
+export type Point = {
+    x: number;
+    y: number;
+}

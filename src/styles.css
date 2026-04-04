@@ -322,3 +322,7 @@ h2 {
 .mandala--pulse {
   animation: pulse 0.2s ease-out;
 }
+
+#mandala-container {
+  background-color: #c5c5c5;
+}

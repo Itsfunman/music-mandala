@@ -1,113 +1,137 @@
-import type { Instrument } from '../types';
+import type { Instrument, Point } from '../types';
 
 export class MandalaService {
-  private angleStep: number = Math.PI / 8;
+    private canvas: HTMLElement = document.getElementById('canvas')!;
+    private canvasWidth = Number(this.canvas.getAttribute('width'));
+    private canvasHeight = Number(this.canvas.getAttribute('height'));
+    private cx = this.canvasWidth / 2;
+    private cy = this.canvasHeight / 2;
+    private baseRadius = 30;
+    private bars = 8;
 
-  public generateMandala(instruments: Instrument[]): SVGElement {
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("width", "500");
-    svg.setAttribute("height", "500");
-    svg.setAttribute("viewBox", "0 0 500 500");
-    svg.style.marginTop = '20px';
-    svg.style.border = '1px solid #ddd';
-    svg.style.borderRadius = '5px';
-    svg.style.backgroundColor = 'white';
-
-    const centerX = 250;
-    const centerY = 250;
-    const maxRadius = 200;
+    public generateMandala(instruments: Instrument[]): HTMLElement {
+    this.canvas.innerHTML = ''; // Clear the canvas
+    let radiusStep: number = 30;
 
     const instrumentStyles = {
-      'kick': { color: 'rgba(255, 87, 51, 0.9)', strokeWidth: 2.5, radiusOffset: 0.1 },
-      'snare': { color: 'rgba(51, 255, 87, 0.9)', strokeWidth: 2, radiusOffset: 0.2 },
-      'hi-hat': { color: 'rgba(51, 87, 255, 0.9)', strokeWidth: 1.5, radiusOffset: 0.3 },
-      'clap': { color: 'rgba(243, 255, 51, 0.9)', strokeWidth: 1, radiusOffset: 0.4 },
-      'tom': { color: 'rgba(255, 51, 243, 0.9)', strokeWidth: 1.8, radiusOffset: 0.5 }
+        kick: { color: 'rgba(255, 87, 51, 0.9)', strokeWidth: 1 },
+        snare: { color: 'rgba(51, 255, 87, 0.9)', strokeWidth: 1 },
+        hiHat: { color: 'rgba(51, 87, 255, 0.9)', strokeWidth: 1 },
+        clap: { color: 'rgba(255, 146, 51, 0.9)', strokeWidth: 1 },
+        tom: { color: 'rgba(255, 51, 243, 0.9)', strokeWidth: 1 }
     };
 
-    // Always draw all instruments, even if they have no active steps
-    instruments.forEach((instrument, instIndex) => {
-      const style = instrumentStyles[instrument.id as keyof typeof instrumentStyles];
-      const radius = maxRadius * (0.2 + instIndex * 0.15);
-      const beats = [
-        instrument.pattern.slice(0, 4),
-        instrument.pattern.slice(4, 8),
-        instrument.pattern.slice(8, 12),
-        instrument.pattern.slice(12, 16)
-      ];
-      beats.forEach((beat, beatIndex) => {
-        const angle = beatIndex * Math.PI / 2;
-        this.drawBeatAndMirror(svg, centerX, centerY, radius, beat, angle, style);
-      });
-    });
+    for (let i = 0; i < instruments.length; i++) {
+        const instrument = instruments[i];
+        const style = instrumentStyles[instrument.id as keyof typeof instrumentStyles];
 
-    return svg;
-  }
-
-  private drawBeatAndMirror(
-    svg: SVGElement,
-    cx: number,
-    cy: number,
-    radius: number,
-    beat: boolean[],
-    startAngle: number,
-    style: { color: string; strokeWidth: number; radiusOffset: number }
-  ): void {
-    const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    const innerRadius = radius * 0.7;
-    const outerRadius = radius;
-
-    this.drawBeatCurve(group, cx, cy, innerRadius, outerRadius, startAngle, beat, style);
-    this.drawBeatCurve(group, cx, cy, innerRadius, outerRadius, startAngle + Math.PI, beat, style);
-
-    svg.appendChild(group);
-  }
-
-  private drawBeatCurve(
-    group: SVGGElement,
-    cx: number,
-    cy: number,
-    innerRadius: number,
-    outerRadius: number,
-    startAngle: number,
-    beat: boolean[],
-    style: { color: string; strokeWidth: number; radiusOffset: number }
-  ): void {
-    let pathData = '';
-    let firstPoint = true;
-
-    beat.forEach((isActive, stepIndex) => {
-      if (isActive) {
-        const angle = startAngle + stepIndex * this.angleStep;
-        const nextAngle = startAngle + (stepIndex + 1) * this.angleStep;
-
-        const startX = cx + Math.cos(angle) * innerRadius;
-        const startY = cy + Math.sin(angle) * innerRadius;
-        const endX = cx + Math.cos(nextAngle) * outerRadius;
-        const endY = cy + Math.sin(nextAngle) * outerRadius;
-
-        const midRadius = (innerRadius + outerRadius) / 2;
-        const cp1X = cx + Math.cos(angle + Math.PI/4) * midRadius;
-        const cp1Y = cy + Math.sin(angle + Math.PI/4) * midRadius;
-        const cp2X = cx + Math.cos(nextAngle - Math.PI/4) * midRadius;
-        const cp2Y = cy + Math.sin(nextAngle - Math.PI/4) * midRadius;
-
-        if (firstPoint) {
-          pathData += `M ${startX} ${startY}`;
-          firstPoint = false;
+        if (!style) {
+            console.warn(`No style found for instrument ID: ${instrument.id}`);
+            continue;
         }
-        pathData += ` C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY}`;
-      }
-    });
 
-    if (pathData) {
-      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      path.setAttribute('d', pathData);
-      path.setAttribute('stroke', style.color);
-      path.setAttribute('stroke-width', style.strokeWidth.toString());
-      path.setAttribute('fill', 'none');
-      path.setAttribute('stroke-linecap', 'round');
-      group.appendChild(path);
+        // Convert the pattern array of booleans to a binary string of "0" and "1"
+        const patternBinary = instrument.pattern.map(val => val ? '1' : '0').join('');
+        console.log(`Pattern binary for ${instrument.id}:`, patternBinary); // Debug log
+        const patternDecimal = parseInt(patternBinary, 2) || 0;
+
+        // Skip if pattern resolves to 0
+        if (patternDecimal === 0) {
+            console.log(`Skipping ${instrument.id} as pattern resolves to 0`);
+            continue;
+        }
+
+        // Use the pattern decimal as a seed with a random offset
+        const lineSeed = (patternDecimal % 1000) / 1000;
+        const currentRadius = this.baseRadius + i * radiusStep;
+
+        this.drawLines(currentRadius, lineSeed, style.color, style.strokeWidth);
     }
-  }
+
+    return this.canvas;
+}
+
+    public getPoints(offsetDegrees = 0, radius = this.baseRadius): Point[] {
+        const offset = (offsetDegrees * Math.PI) / 180;
+
+        const points: Point[] = [];
+
+        for (let i = 0; i < this.bars; i++) {
+            const angle = (i * 2 * Math.PI) / this.bars - Math.PI / 2 + offset;
+            const coX = this.cx + radius * Math.cos(angle);
+            const coY = this.cy + radius * Math.sin(angle);
+
+            points.push({ x: coX, y: coY });
+        }
+
+        return points;
+    }
+
+    public drawLines(radius: number, seed: number, color: string, strokeWidth: number): void {
+        const svgNS = "http://www.w3.org/2000/svg";
+        const basePoints = this.getPoints(0, radius);
+        const mirrorPoints = this.getPoints(180 / this.bars, radius);
+
+        const angleBetweenPoints = (2 * Math.PI) / this.bars;
+
+        for (let i = 0; i < basePoints.length; i++) {
+            const basePointA = basePoints[i];
+            const mirrorPoint = mirrorPoints[i];
+            const basePointB = basePoints[(i + 1) % basePoints.length];
+
+            const x1 = basePointA.x;
+            const y1 = basePointA.y;
+            const x2 = mirrorPoint.x;
+            const y2 = mirrorPoint.y;
+            const x3 = basePointB.x;
+            const y3 = basePointB.y;
+
+            const angle = i * angleBetweenPoints;
+            const controlX = this.cx + (seed - 0.5) * radius * 0.5;
+            const controlY = this.cy + (seed - 0.5) * radius * 0.5;
+
+            const dx = controlX - this.cx;
+            const dy = controlY - this.cy;
+
+            const rotatedControlX = this.cx + dx * Math.cos(angle) - dy * Math.sin(angle);
+            const rotatedControlY = this.cy + dx * Math.sin(angle) + dy * Math.cos(angle);
+
+            // Draw the original curve (A to MA)
+            const path = document.createElementNS(svgNS, "path");
+            path.setAttribute("d", `M${x1},${y1} Q${rotatedControlX},${rotatedControlY} ${x2},${y2}`);
+            path.setAttribute("stroke", color);
+            path.setAttribute("stroke-width", strokeWidth.toString());
+            path.setAttribute("fill", "none");
+            this.canvas.appendChild(path);
+
+            // Calculate the reflection of the control point across the line from center to mirror point
+            const lineX1 = this.cx;
+            const lineY1 = this.cy;
+            const lineX2 = x2;
+            const lineY2 = y2;
+
+            if (lineX2 !== lineX1 || lineY2 !== lineY1) {
+                const a = lineY2 - lineY1;
+                const b = lineX1 - lineX2;
+                const c = (lineY1 - lineY2) * lineX1 + (lineX2 - lineX1) * lineY1;
+
+                const pointX = rotatedControlX;
+                const pointY = rotatedControlY;
+
+                const denominator = a * a + b * b;
+                if (denominator !== 0) {
+                    const reflectedX = pointX - (2 * a * (a * pointX + b * pointY + c)) / denominator;
+                    const reflectedY = pointY - (2 * b * (a * pointX + b * pointY + c)) / denominator;
+
+                    // Draw the reversed curve (MA to B)
+                    const reversedPath = document.createElementNS(svgNS, "path");
+                    reversedPath.setAttribute("d", `M${x2},${y2} Q${reflectedX},${reflectedY} ${x3},${y3}`);
+                    reversedPath.setAttribute("stroke", color);
+                    reversedPath.setAttribute("stroke-width", strokeWidth.toString());
+                    reversedPath.setAttribute("fill", "none");
+                    this.canvas.appendChild(reversedPath);
+                }
+            }
+        }
+    }
 }

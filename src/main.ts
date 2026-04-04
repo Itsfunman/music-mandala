@@ -34,15 +34,15 @@ document.addEventListener('click', async () => {
 }, { once: true });
 
 function createInstrumentButtons(): void {
-  instruments = [
-    { id: 'kick', name: 'Kick', sound: () => audioService.createKick(), pattern: Array(16).fill(false) },
-    { id: 'snare', name: 'Snare', sound: () => audioService.createSnare(), pattern: Array(16).fill(false) },
-    { id: 'hi-hat', name: 'Hi-Hat', sound: () => audioService.createHiHat(), pattern: Array(16).fill(false) },
-    { id: 'clap', name: 'Clap', sound: () => audioService.createClap(), pattern: Array(16).fill(false) },
-    { id: 'tom', name: 'Tom', sound: () => audioService.createTom(), pattern: Array(16).fill(false) }
-  ];
+    instruments = [
+        { id: 'kick', name: 'Kick', sound: () => audioService.createKick(), pattern: Array(16).fill(false) },
+        { id: 'snare', name: 'Snare', sound: () => audioService.createSnare(), pattern: Array(16).fill(false) },
+        { id: 'hiHat', name: 'Hi-Hat', sound: () => audioService.createHiHat(), pattern: Array(16).fill(false) },
+        { id: 'clap', name: 'Clap', sound: () => audioService.createClap(), pattern: Array(16).fill(false) },
+        { id: 'tom', name: 'Tom', sound: () => audioService.createTom(), pattern: Array(16).fill(false) }
+    ];
 
-  domHelper.renderInstrumentButtons(instruments, openEditor);
+    domHelper.renderInstrumentButtons(instruments, openEditor);
 }
 
 function openEditor(instrument: Instrument): void {
@@ -50,6 +50,7 @@ function openEditor(instrument: Instrument): void {
   domHelper.openEditor(`Edit ${instrument.name}`);
   const loopEditor = domHelper.renderLoopEditor(instrument.pattern, (newPattern) => {
     instrument.pattern = newPattern;
+    console.log(`Pattern updated for ${instrument.id}:`, newPattern);
     renderMandala();
     loopEditor.updatePattern(newPattern);
   });
