@@ -1,14 +1,10 @@
 import { AudioService } from './services/AudioService';
-import { MandalaService } from './services/MandalaService';
-import { SongService } from './services/SongService';
 import { MandalaComponent } from './components/MandalaComponent';
 import { DOMHelper } from './utils/DOMHelper';
 import type { Instrument } from './types';
 
 // Services
 const audioService = new AudioService();
-const mandalaService = new MandalaService();
-const songService = new SongService();
 const domHelper = new DOMHelper();
 let mandalaComponent: MandalaComponent;
 
