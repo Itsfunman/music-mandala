@@ -101,7 +101,7 @@ export class MandalaService {
             path.setAttribute("d", `M${x1},${y1} Q${rotatedControlX},${rotatedControlY} ${x2},${y2}`);
             path.setAttribute("stroke", color);
             path.setAttribute("stroke-width", strokeWidth.toString());
-            path.setAttribute("fill", "none");
+            path.setAttribute("fill", `transparent`);
             this.canvas.appendChild(path);
 
             // Calculate the reflection of the control point across the line from center to mirror point
@@ -128,7 +128,7 @@ export class MandalaService {
                     reversedPath.setAttribute("d", `M${x2},${y2} Q${reflectedX},${reflectedY} ${x3},${y3}`);
                     reversedPath.setAttribute("stroke", color);
                     reversedPath.setAttribute("stroke-width", strokeWidth.toString());
-                    reversedPath.setAttribute("fill", "none");
+                    reversedPath.setAttribute("fill", `transparent`);
                     this.canvas.appendChild(reversedPath);
                 }
             }

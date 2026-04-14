@@ -323,6 +323,12 @@ h2 {
   animation: pulse 0.2s ease-out;
 }
 
-#mandala-container {
-  background-color: #c5c5c5;
+@keyframes rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.mandala-rotate {
+  animation: rotate 5s linear infinite;
+  transform-origin: center;
 }

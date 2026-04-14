@@ -14,6 +14,7 @@ export class MandalaComponent {
         this.container.innerHTML = '';
         const mandalaCanvas = this.mandalaService.generateMandala(instruments);
         this.container.appendChild(mandalaCanvas);
+        mandalaCanvas.classList.add('mandala-rotate');
     }
 
     public pulse(): void {
