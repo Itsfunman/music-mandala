@@ -52,9 +52,24 @@ function openEditor(instrument: Instrument): void {
   });
 }
 
+function saveMandala(): void {
+  const seed = instruments.map(inst => inst.pattern.map(b => (b ? '1' : '0')).join('')).join('|');
+  const history: string[] = JSON.parse(localStorage.getItem('mandala-history') ?? '[]');
+
+  // Avoid saving duplicates consecutively
+  if (history[history.length - 1] === seed) return;
+
+  history.push(seed);
+
+  // Keep max 30 entries
+  if (history.length > 30) history.shift();
+  localStorage.setItem('mandala-history', JSON.stringify(history));
+}
+
 function renderMandala(): void {
   if (mandalaComponent) {
     mandalaComponent.render(instruments);
+    saveMandala();
   }
 }
 
