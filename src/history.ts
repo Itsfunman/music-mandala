@@ -2,9 +2,14 @@ const container = document.getElementById('history-container') as HTMLDivElement
 const historySeeds: string[] = JSON.parse(localStorage.getItem('mandala-history') || '[]');
 
 // --- CONFIGURATION ---
-const MANDALA_SIZE_PERCENT = 0.2;
+const MANDALA_SIZE_PERCENT = 0.3;
 const MANDALA_LINE_THICKNESS = 2.0;
 const BORDER_SIZE_PERCENT = 0.0;
+
+// NEW: Control the movement and rotation speeds
+const FLIGHT_SPEED = 1.0;    // Multiplier for movement speed (e.g., 2.0 is twice as fast)
+const ROTATION_SPEED = 1.0;  // Base rotation speed in degrees per frame
+// ---------------------
 
 const instrumentStyles = [
     { color: 'rgba(255, 87, 51, 0.9)', strokeWidth: MANDALA_LINE_THICKNESS },  // kick
@@ -27,6 +32,15 @@ function getPoints(offsetDegrees: number, radius: number, cx: number, cy: number
 function renderMandalaFromSeed(svg: SVGSVGElement, seed: string) {
     const cx = 200, cy = 200, baseRadius = 30, bars = 8, radiusStep = 30;
     const svgNS = "http://www.w3.org/2000/svg";
+
+    // Add white background circle behind the mandala
+    const bgCircle = document.createElementNS(svgNS, "circle");
+    bgCircle.setAttribute("cx", cx.toString());
+    bgCircle.setAttribute("cy", cy.toString());
+    bgCircle.setAttribute("r", "190");
+    bgCircle.setAttribute("fill", "white");
+    svg.appendChild(bgCircle);
+
     const parts = seed.split('|');
 
     parts.forEach((patternBinary, i) => {
@@ -100,32 +114,36 @@ historySeeds.forEach((seed) => {
     wrapper.appendChild(svg);
     container.appendChild(wrapper);
 
-    let vx = (Math.random() > 0.5 ? 1 : -1) * (1 + Math.random() * 2);
-    let vy = (Math.random() > 0.5 ? 1 : -1) * (1 + Math.random() * 2);
+    // Apply FLIGHT_SPEED to initial velocities
+    let vx = (Math.random() > 0.5 ? 1 : -1) * (1 + Math.random() * 2) * FLIGHT_SPEED;
+    let vy = (Math.random() > 0.5 ? 1 : -1) * (1 + Math.random() * 2) * FLIGHT_SPEED;
 
     let x = window.innerWidth / 2;
     let y = window.innerHeight / 2;
 
+    // Set up initial rotation state and add slight variance to rotation speed per mandala
+    let rotation = Math.random() * 360;
+    let vRot = (Math.random() > 0.5 ? 1 : -1) * ROTATION_SPEED * (0.8 + Math.random() * 0.4);
+
     function animate() {
-        // 1. Calculate the exact mandala size (visual == hitbox)
         const minDim = Math.min(window.innerWidth, window.innerHeight);
         const mandalaSize = minDim * MANDALA_SIZE_PERCENT;
 
         wrapper.style.width = `${mandalaSize}px`;
         wrapper.style.height = `${mandalaSize}px`;
 
-        // 2. Calculate the boundaries of the virtual border they bounce in
         const boundaryWidth = window.innerWidth * (1 - BORDER_SIZE_PERCENT);
         const boundaryHeight = window.innerHeight * (1 - BORDER_SIZE_PERCENT);
 
-        // Center the bouncing boundary perfectly on the screen
         const offsetX = (window.innerWidth - boundaryWidth) / 2;
         const offsetY = (window.innerHeight - boundaryHeight) / 2;
 
         x += vx;
         y += vy;
 
-        // 3. Bouncing collision: Check exactly against the mandala size
+        // Increment rotation
+        rotation += vRot;
+
         if (x <= offsetX) {
             x = offsetX;
             vx = Math.abs(vx); // Force right
@@ -142,7 +160,8 @@ historySeeds.forEach((seed) => {
             vy = -Math.abs(vy); // Force up
         }
 
-        wrapper.style.transform = `translate(${x}px, ${y}px)`;
+        // Apply translation AND rotation together
+        wrapper.style.transform = `translate(${x}px, ${y}px) rotate(${rotation}deg)`;
         requestAnimationFrame(animate);
     }
 

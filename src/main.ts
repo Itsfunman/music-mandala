@@ -61,8 +61,8 @@ function saveMandala(): void {
 
   history.push(seed);
 
-  // Keep max 30 entries
-  if (history.length > 30) history.shift();
+  // Keep max count entries
+  if (history.length > 10) history.shift();
   localStorage.setItem('mandala-history', JSON.stringify(history));
 }
 
