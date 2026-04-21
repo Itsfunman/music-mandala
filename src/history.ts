@@ -1,15 +1,19 @@
 const container = document.getElementById('history-container') as HTMLDivElement;
 const historySeeds: string[] = JSON.parse(localStorage.getItem('mandala-history') || '[]');
 
+// --- CONFIGURATION ---
+const MANDALA_SIZE_PERCENT = 0.2;
+const MANDALA_LINE_THICKNESS = 2.0;
+const BORDER_SIZE_PERCENT = 0.0;
+
 const instrumentStyles = [
-    { color: 'rgba(255, 87, 51, 0.9)', strokeWidth: 1 },  // kick
-    { color: 'rgba(51, 255, 87, 0.9)', strokeWidth: 1 },  // snare
-    { color: 'rgba(51, 87, 255, 0.9)', strokeWidth: 1 },  // hiHat
-    { color: 'rgba(255, 146, 51, 0.9)', strokeWidth: 1 }, // clap
-    { color: 'rgba(255, 51, 243, 0.9)', strokeWidth: 1 }  // tom
+    { color: 'rgba(255, 87, 51, 0.9)', strokeWidth: MANDALA_LINE_THICKNESS },  // kick
+    { color: 'rgba(51, 255, 87, 0.9)', strokeWidth: MANDALA_LINE_THICKNESS },  // snare
+    { color: 'rgba(51, 87, 255, 0.9)', strokeWidth: MANDALA_LINE_THICKNESS },  // hiHat
+    { color: 'rgba(255, 146, 51, 0.9)', strokeWidth: MANDALA_LINE_THICKNESS }, // clap
+    { color: 'rgba(255, 51, 243, 0.9)', strokeWidth: MANDALA_LINE_THICKNESS }  // tom
 ];
 
-// Helper to calculate the star/bar points
 function getPoints(offsetDegrees: number, radius: number, cx: number, cy: number, bars: number) {
     const offset = (offsetDegrees * Math.PI) / 180;
     const points = [];
@@ -20,7 +24,6 @@ function getPoints(offsetDegrees: number, radius: number, cx: number, cy: number
     return points;
 }
 
-// Standalone renderer that directly parses the "0100|1000..." seed
 function renderMandalaFromSeed(svg: SVGSVGElement, seed: string) {
     const cx = 200, cy = 200, baseRadius = 30, bars = 8, radiusStep = 30;
     const svgNS = "http://www.w3.org/2000/svg";
@@ -55,7 +58,6 @@ function renderMandalaFromSeed(svg: SVGSVGElement, seed: string) {
             const rotatedControlX = cx + dx * Math.cos(angle) - dy * Math.sin(angle);
             const rotatedControlY = cy + dx * Math.sin(angle) + dy * Math.cos(angle);
 
-            // Draw Original Curve
             const path = document.createElementNS(svgNS, "path");
             path.setAttribute("d", `M${basePointA.x},${basePointA.y} Q${rotatedControlX},${rotatedControlY} ${mirrorPoint.x},${mirrorPoint.y}`);
             path.setAttribute("stroke", style.color);
@@ -63,7 +65,6 @@ function renderMandalaFromSeed(svg: SVGSVGElement, seed: string) {
             path.setAttribute("fill", `transparent`);
             svg.appendChild(path);
 
-            // Calculate Reflection
             const a = mirrorPoint.y - cy;
             const b = cx - mirrorPoint.x;
             const c = (cy - mirrorPoint.y) * cx + (mirrorPoint.x - cx) * cy;
@@ -73,7 +74,6 @@ function renderMandalaFromSeed(svg: SVGSVGElement, seed: string) {
                 const reflectedX = rotatedControlX - (2 * a * (a * rotatedControlX + b * rotatedControlY + c)) / denominator;
                 const reflectedY = rotatedControlY - (2 * b * (a * rotatedControlX + b * rotatedControlY + c)) / denominator;
 
-                // Draw Reversed Curve
                 const reversedPath = document.createElementNS(svgNS, "path");
                 reversedPath.setAttribute("d", `M${mirrorPoint.x},${mirrorPoint.y} Q${reflectedX},${reflectedY} ${basePointB.x},${basePointB.y}`);
                 reversedPath.setAttribute("stroke", style.color);
@@ -85,34 +85,62 @@ function renderMandalaFromSeed(svg: SVGSVGElement, seed: string) {
     });
 }
 
-// Generate the floating mandalas
 historySeeds.forEach((seed) => {
     const wrapper = document.createElement('div');
     wrapper.className = 'mandala-wrapper';
+    wrapper.style.position = 'absolute';
 
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', '0 0 400 400');
     svg.setAttribute('width', '100%');
     svg.setAttribute('height', '100%');
 
-    // Call our clean, standalone renderer
     renderMandalaFromSeed(svg, seed);
 
     wrapper.appendChild(svg);
     container.appendChild(wrapper);
 
-    // Animation logic
-    let x = Math.random() * (window.innerWidth - 200);
-    let y = Math.random() * (window.innerHeight - 200);
-    let vx = (Math.random() - 0.5) * 3;
-    let vy = (Math.random() - 0.5) * 3;
+    let vx = (Math.random() > 0.5 ? 1 : -1) * (1 + Math.random() * 2);
+    let vy = (Math.random() > 0.5 ? 1 : -1) * (1 + Math.random() * 2);
+
+    let x = window.innerWidth / 2;
+    let y = window.innerHeight / 2;
 
     function animate() {
+        // 1. Calculate the exact mandala size (visual == hitbox)
+        const minDim = Math.min(window.innerWidth, window.innerHeight);
+        const mandalaSize = minDim * MANDALA_SIZE_PERCENT;
+
+        wrapper.style.width = `${mandalaSize}px`;
+        wrapper.style.height = `${mandalaSize}px`;
+
+        // 2. Calculate the boundaries of the virtual border they bounce in
+        const boundaryWidth = window.innerWidth * (1 - BORDER_SIZE_PERCENT);
+        const boundaryHeight = window.innerHeight * (1 - BORDER_SIZE_PERCENT);
+
+        // Center the bouncing boundary perfectly on the screen
+        const offsetX = (window.innerWidth - boundaryWidth) / 2;
+        const offsetY = (window.innerHeight - boundaryHeight) / 2;
+
         x += vx;
         y += vy;
 
-        if (x <= 0 || x >= window.innerWidth - 200) vx *= -1;
-        if (y <= 0 || y >= window.innerHeight - 200) vy *= -1;
+        // 3. Bouncing collision: Check exactly against the mandala size
+        if (x <= offsetX) {
+            x = offsetX;
+            vx = Math.abs(vx); // Force right
+        } else if (x >= offsetX + boundaryWidth - mandalaSize) {
+            x = offsetX + boundaryWidth - mandalaSize;
+            vx = -Math.abs(vx); // Force left
+        }
+
+        if (y <= offsetY) {
+            y = offsetY;
+            vy = Math.abs(vy); // Force down
+        } else if (y >= offsetY + boundaryHeight - mandalaSize) {
+            y = offsetY + boundaryHeight - mandalaSize;
+            vy = -Math.abs(vy); // Force up
+        }
 
         wrapper.style.transform = `translate(${x}px, ${y}px)`;
         requestAnimationFrame(animate);
