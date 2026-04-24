@@ -100,6 +100,10 @@ function renderMandalaFromSeed(svg: SVGSVGElement, seed: string) {
 }
 
 historySeeds.forEach((seed) => {
+    addMandala(seed);
+});
+
+function addMandala(seed: string) {
     const wrapper = document.createElement('div');
     wrapper.className = 'mandala-wrapper';
     wrapper.style.position = 'absolute';
@@ -166,4 +170,20 @@ historySeeds.forEach((seed) => {
     }
 
     animate();
-});
+}
+
+const initialCount = historySeeds.length;
+let lastKnownCount = initialCount;
+
+setInterval(() => {
+    const currentHistory: string[] = JSON.parse(localStorage.getItem('mandala-history') || '[]');
+    if (currentHistory.length > lastKnownCount) {
+        // Add new mandalas that were saved since last check
+        for (let i = lastKnownCount; i < currentHistory.length; i++) {
+            addMandala(currentHistory[i]);
+        }
+        lastKnownCount = currentHistory.length;
+
+        console.log(`Added ${currentHistory.length - initialCount} new mandala(s). Total now: ${currentHistory.length}`);
+    }
+}, 1000);

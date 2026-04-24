@@ -69,7 +69,6 @@ function saveMandala(): void {
 function renderMandala(): void {
   if (mandalaComponent) {
     mandalaComponent.render(instruments);
-    saveMandala();
   }
 }
 
@@ -112,6 +111,11 @@ function setupEventListeners(): void {
       clearInterval(intervalId);
       isPlaying = false;
     }
+  });
+
+  domHelper.onSaveClick(() => {
+    saveMandala();
+    console.log('Mandala saved!');
   });
 
   domHelper.onCloseEditorClick(() => {

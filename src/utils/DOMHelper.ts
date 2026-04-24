@@ -5,6 +5,7 @@ import { LoopEditor } from '../components/LoopEditor';
 export class DOMHelper {
   private playButton: HTMLButtonElement;
   private stopButton: HTMLButtonElement;
+  private saveButton: HTMLButtonElement;
   private instrumentsContainer: HTMLElement;
   private editorWindow: HTMLElement;
   private editorTitle: HTMLElement;
@@ -16,6 +17,8 @@ export class DOMHelper {
 
   constructor() {
     this.playButton = document.getElementById('play') as HTMLButtonElement;
+    this.stopButton = document.getElementById('stop') as HTMLButtonElement;
+    this.saveButton = document.getElementById('save') as HTMLButtonElement;
     this.stopButton = document.getElementById('stop') as HTMLButtonElement;
 
     this.instrumentsContainer = document.getElementById('instruments')!;
@@ -81,6 +84,10 @@ export class DOMHelper {
 
   public onStopClick(callback: () => void): void {
     this.stopButton.addEventListener('click', callback);
+  }
+
+  public onSaveClick(callback: () => void): void {
+    this.saveButton.addEventListener('click', callback);
   }
 
   public onCloseEditorClick(callback: () => void): void {
