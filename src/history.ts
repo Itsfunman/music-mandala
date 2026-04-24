@@ -33,13 +33,7 @@ function renderMandalaFromSeed(svg: SVGSVGElement, seed: string) {
     const cx = 200, cy = 200, baseRadius = 30, bars = 8, radiusStep = 30;
     const svgNS = "http://www.w3.org/2000/svg";
 
-    // Add white background circle behind the mandala
-    const bgCircle = document.createElementNS(svgNS, "circle");
-    bgCircle.setAttribute("cx", cx.toString());
-    bgCircle.setAttribute("cy", cy.toString());
-    bgCircle.setAttribute("r", "190");
-    bgCircle.setAttribute("fill", "white");
-    svg.appendChild(bgCircle);
+    createVinylBackground(svg, cx, cy, 190);
 
     const parts = seed.split('|');
 
@@ -97,6 +91,83 @@ function renderMandalaFromSeed(svg: SVGSVGElement, seed: string) {
             }
         }
     });
+}
+
+function createVinylBackground(svg: SVGSVGElement, cx: number, cy: number, radius: number, grooveCount: number = 25) {
+    const svgNS = "http://www.w3.org/2000/svg";
+
+    // Unique ID to avoid collisions across multiple SVGs
+    const uid = `vinyl-${Math.random().toString(36).slice(2)}`;
+
+    // defs for gradient
+    const defs = document.createElementNS(svgNS, "defs");
+
+    // gradient
+    const gradient = document.createElementNS(svgNS, "radialGradient");
+    gradient.setAttribute("id", `${uid}-gradient`);
+
+    const stop1 = document.createElementNS(svgNS, "stop");
+    stop1.setAttribute("offset", "0%");
+    stop1.setAttribute("stop-color", "#222");
+
+    const stop2 = document.createElementNS(svgNS, "stop");
+    stop2.setAttribute("offset", "100%");
+    stop2.setAttribute("stop-color", "black");
+
+    gradient.appendChild(stop1);
+    gradient.appendChild(stop2);
+
+    defs.appendChild(gradient);
+    svg.appendChild(defs);
+
+    // disc
+    const disc = document.createElementNS(svgNS, "circle");
+    disc.setAttribute("cx", cx.toString());
+    disc.setAttribute("cy", cy.toString());
+    disc.setAttribute("r", radius.toString());
+    disc.setAttribute("fill", `url(#${uid}-gradient)`);
+    svg.appendChild(disc);
+
+    // grooves
+    const grooveSpacing = radius / grooveCount;
+
+    for (let i = 1; i < grooveCount; i++) {
+        const grooveCircle = document.createElementNS(svgNS, "circle");
+
+        grooveCircle.setAttribute("cx", cx.toString());
+        grooveCircle.setAttribute("cy", cy.toString());
+        grooveCircle.setAttribute("r", (radius - i * grooveSpacing).toString());
+
+        grooveCircle.setAttribute("fill", "none");
+        grooveCircle.setAttribute("stroke", "rgba(255,255,255,0.08)");
+        grooveCircle.setAttribute("stroke-width", "1.2"); 
+
+        svg.appendChild(grooveCircle);
+    }
+
+    // label spacing
+    const labelSpacing = document.createElementNS(svgNS, "circle");
+    labelSpacing.setAttribute("cx", cx.toString());
+    labelSpacing.setAttribute("cy", cy.toString());
+    labelSpacing.setAttribute("r", (radius * 0.25).toString());
+    labelSpacing.setAttribute("fill", "#121212");
+    svg.appendChild(labelSpacing);
+
+    // label
+    const label = document.createElementNS(svgNS, "circle");
+    label.setAttribute("cx", cx.toString());
+    label.setAttribute("cy", cy.toString());
+    label.setAttribute("r", (radius * 0.2).toString());
+    label.setAttribute("fill", "white");
+    svg.appendChild(label);
+
+    // hole
+    const hole = document.createElementNS(svgNS, "circle");
+    hole.setAttribute("cx", cx.toString());
+    hole.setAttribute("cy", cy.toString());
+    hole.setAttribute("r", (radius * 0.03).toString());
+    hole.setAttribute("fill", "black");
+    svg.appendChild(hole);
 }
 
 historySeeds.forEach((seed) => {
