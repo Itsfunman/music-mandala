@@ -129,7 +129,12 @@ function addMandala(seed: string) {
     let rotation = Math.random() * 360;
     let vRot = (Math.random() > 0.5 ? 1 : -1) * ROTATION_SPEED * (0.8 + Math.random() * 0.4);
 
-    function animate() {
+    let lastTime = performance.now();
+
+    function animate(currentTime: number) {
+        const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
+        lastTime = currentTime;
+
         const minDim = Math.min(window.innerWidth, window.innerHeight);
         const mandalaSize = minDim * MANDALA_SIZE_PERCENT;
 
@@ -142,11 +147,11 @@ function addMandala(seed: string) {
         const offsetX = (window.innerWidth - boundaryWidth) / 2;
         const offsetY = (window.innerHeight - boundaryHeight) / 2;
 
-        x += vx;
-        y += vy;
+        x += vx * deltaTime * 60;
+        y += vy * deltaTime * 60;
 
         // Increment rotation
-        rotation += vRot;
+        rotation += vRot * deltaTime * 60;
 
         if (x <= offsetX) {
             x = offsetX;
@@ -169,7 +174,7 @@ function addMandala(seed: string) {
         requestAnimationFrame(animate);
     }
 
-    animate();
+    requestAnimationFrame(animate);
 }
 
 const initialCount = historySeeds.length;
