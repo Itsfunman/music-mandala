@@ -3,6 +3,50 @@ import { MandalaComponent } from './components/MandalaComponent';
 import { DOMHelper } from './utils/DOMHelper';
 import type { Instrument } from './types';
 
+// WebSocket connection
+let ws: WebSocket | null = null;
+
+function initWebSocket(): void {
+  ws = new WebSocket('ws://localhost:8080');
+
+  ws.onopen = () => {
+    console.log('Connected to WebSocket server');
+  };
+
+  ws.onmessage = (event) => {
+    console.log('Message from ESP32:', event.data);
+    try {
+      const data = JSON.parse(event.data);
+      // Handle incoming data from ESP32
+      handleESP32Message(data);
+    } catch (e) {
+      console.log('Received non-JSON message:', event.data);
+    }
+  };
+
+  ws.onclose = () => {
+    console.log('Disconnected from WebSocket server');
+    // Reconnect after 3 seconds
+    setTimeout(initWebSocket, 3000);
+  };
+
+  ws.onerror = (error) => {
+    console.error('WebSocket error:', error);
+  };
+}
+
+function sendToESP32(data: object): void {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify(data));
+  }
+}
+
+function handleESP32Message(data: { button?: boolean; potentiometer?: number }): void {
+  // Handle data received from ESP32
+  // For example: trigger sounds based on ESP32 input
+  console.log('ESP32 Data - Button:', data.button, 'Potentiometer:', data.potentiometer);
+}
+
 // Services
 const audioService = new AudioService();
 const domHelper = new DOMHelper();
@@ -16,6 +60,7 @@ let bpm = 120;
 let intervalId: number | null = null;
 
 async function init(): Promise<void> {
+  initWebSocket(); // Start WebSocket connection
   createInstrumentButtons();
   mandalaComponent = new MandalaComponent(domHelper.getMandalaContainer());
   renderMandala();
