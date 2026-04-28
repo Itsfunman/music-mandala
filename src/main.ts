@@ -16,6 +16,8 @@ let currentInstrument: Instrument | null = null;
 let isPlaying = false;
 let bpm = 120;
 let intervalId: number | null = null;
+let idleTimeoutId: number | null = null;
+const IDLE_TIMEOUT = 30; // seconds
 
 function getNextInstrument(): Instrument | null {
   if (instruments.length === 0) {
@@ -54,18 +56,22 @@ async function init(): Promise<void> {
       clearInterval(intervalId);
       playLoop();
     }
+    resetIdleTimer();
   });
 
   wsService.onStepButton((message) => {
     console.log(`Step ${message.step} button ${message.pressed ? 'pressed' : 'released'}`);
+    resetIdleTimer();
   });
 
   wsService.onInstrumentSwitch(() => {
     switchCurrentInstrument();
+    resetIdleTimer();
   });
 
   wsService.onStatusChange((connected) => {
     console.log(connected ? '✓ Connected to ESP32' : '✗ Disconnected from ESP32');
+    resetIdleTimer();
   });
 
   createInstrumentButtons();
@@ -124,6 +130,27 @@ function renderMandala(): void {
   }
 }
 
+function clearIdleTimer(): void {
+  if (idleTimeoutId !== null) {
+    clearTimeout(idleTimeoutId);
+    idleTimeoutId = null;
+  }
+}
+
+function resetIdleTimer(): void {
+  if (!isPlaying) return;
+  clearIdleTimer();
+  idleTimeoutId = window.setTimeout(() => {
+    if (isPlaying && intervalId) {
+      clearInterval(intervalId);
+      intervalId = null;
+      isPlaying = false;
+      console.log(`Stopped playback after ${IDLE_TIMEOUT} seconds of no input.`);
+    }
+    idleTimeoutId = null;
+  }, IDLE_TIMEOUT * 1000);
+}
+
 function playLoop(): void {
   if (intervalId) clearInterval(intervalId);
   const stepDuration = (60000 / bpm) / 4;
@@ -148,6 +175,9 @@ function playLoop(): void {
 
     index = (index + 1) % 16;
   }, stepDuration);
+
+  isPlaying = true;
+  resetIdleTimer();
 }
 
 function setupEventListeners(): void {
@@ -161,7 +191,9 @@ function setupEventListeners(): void {
   domHelper.onStopClick(() => {
     if (isPlaying && intervalId) {
       clearInterval(intervalId);
+      intervalId = null;
       isPlaying = false;
+      clearIdleTimer();
     }
   });
 
@@ -180,6 +212,11 @@ function setupEventListeners(): void {
       clearInterval(intervalId!);
       playLoop();
     }
+  });
+
+  const resetEvents: Array<keyof DocumentEventMap> = ['click', 'keydown', 'mousemove', 'touchstart'];
+  resetEvents.forEach((eventName) => {
+    document.addEventListener(eventName, resetIdleTimer, { passive: true });
   });
 }
 
