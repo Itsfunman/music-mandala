@@ -9,11 +9,7 @@ export class MandalaService {
     private baseRadius = 30;
     private bars = 8;
 
-    public generateMandala(instruments: Instrument[]): HTMLElement {
-    this.canvas.innerHTML = ''; // Clear the canvas
-    let radiusStep: number = 30;
-
-    const instrumentStyles = {
+    public static instrumentStyles = {
         kick: { color: 'rgba(255, 87, 51, 0.9)', strokeWidth: 1 },
         snare: { color: 'rgba(51, 255, 87, 0.9)', strokeWidth: 1 },
         hiHat: { color: 'rgba(51, 87, 255, 0.9)', strokeWidth: 1 },
@@ -21,35 +17,46 @@ export class MandalaService {
         tom: { color: 'rgba(255, 51, 243, 0.9)', strokeWidth: 1 }
     };
 
-    for (let i = 0; i < instruments.length; i++) {
-        const instrument = instruments[i];
-        const style = instrumentStyles[instrument.id as keyof typeof instrumentStyles];
+    public generateMandala(instruments: Instrument[]): HTMLElement {
+        this.canvas.innerHTML = ''; // Clear the canvas
+        let radiusStep: number = 30;
 
-        if (!style) {
-            console.warn(`No style found for instrument ID: ${instrument.id}`);
-            continue;
+        for (let i = 0; i < instruments.length; i++) {
+            const instrument = instruments[i];
+            const style = MandalaService.instrumentStyles[instrument.id as keyof typeof MandalaService.instrumentStyles];
+
+            if (!style) {
+                console.warn(`No style found for instrument ID: ${instrument.id}`);
+                continue;
+            }
+
+            // Convert the pattern array of booleans to a binary string of "0" and "1"
+            const patternBinary = this.instrumentToSeed(instrument);
+            console.log(`Pattern binary for ${instrument.id}:`, patternBinary); // Debug log
+            const patternDecimal = parseInt(patternBinary, 2) || 0;
+            console.log(`Pattern decimal for ${instrument.id}:`, patternDecimal); // Debug log
+
+            // Skip if pattern resolves to 0
+            if (patternDecimal === 0) {
+                console.log(`Skipping ${instrument.id} as pattern resolves to 0`);
+                continue;
+            }
+
+            // Use the pattern decimal as a seed with a random offset
+            const lineSeed = (patternDecimal % 1000) / 1000;
+            console.log(`Line seed for ${instrument.id}:`, lineSeed); // Debug log
+            const currentRadius = this.baseRadius + i * radiusStep;
+
+            this.drawLines(currentRadius, lineSeed, style.color, style.strokeWidth, this.canvas);
         }
 
-        // Convert the pattern array of booleans to a binary string of "0" and "1"
-        const patternBinary = instrument.pattern.map(val => val ? '1' : '0').join('');
-        console.log(`Pattern binary for ${instrument.id}:`, patternBinary); // Debug log
-        const patternDecimal = parseInt(patternBinary, 2) || 0;
-
-        // Skip if pattern resolves to 0
-        if (patternDecimal === 0) {
-            console.log(`Skipping ${instrument.id} as pattern resolves to 0`);
-            continue;
-        }
-
-        // Use the pattern decimal as a seed with a random offset
-        const lineSeed = (patternDecimal % 1000) / 1000;
-        const currentRadius = this.baseRadius + i * radiusStep;
-
-        this.drawLines(currentRadius, lineSeed, style.color, style.strokeWidth);
+        return this.canvas;
     }
 
-    return this.canvas;
-}
+    public instrumentToSeed(instrument: Instrument): string {
+        const patternBinary = instrument.pattern.map(step => step ? '1' : '0').join('');
+        return patternBinary;
+    }  
 
     public getPoints(offsetDegrees = 0, radius = this.baseRadius): Point[] {
         const offset = (offsetDegrees * Math.PI) / 180;
@@ -67,12 +74,28 @@ export class MandalaService {
         return points;
     }
 
-    public drawLines(radius: number, seed: number, color: string, strokeWidth: number): void {
-        const svgNS = "http://www.w3.org/2000/svg";
-        const basePoints = this.getPoints(0, radius);
-        const mirrorPoints = this.getPoints(180 / this.bars, radius);
+    public drawLines(radius: number, seed: number, color: string, strokeWidth: number, parent: Element): void {
+        MandalaService.drawLines(parent, radius, seed, color, strokeWidth, this.cx, this.cy, this.bars);
+    }
 
-        const angleBetweenPoints = (2 * Math.PI) / this.bars;
+    public static getPoints(offsetDegrees: number, radius: number, cx: number, cy: number, bars: number): Point[] {
+        const offset = (offsetDegrees * Math.PI) / 180;
+        const points: Point[] = [];
+
+        for (let i = 0; i < bars; i++) {
+            const angle = (i * 2 * Math.PI) / bars - Math.PI / 2 + offset;
+            points.push({ x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) });
+        }
+
+        return points;
+    }
+
+    public static drawLines(parent: Element, radius: number, seed: number, color: string, strokeWidth: number, cx: number, cy: number, bars: number): void {
+        const svgNS = "http://www.w3.org/2000/svg";
+        const basePoints = MandalaService.getPoints(0, radius, cx, cy, bars);
+        const mirrorPoints = MandalaService.getPoints(180 / bars, radius, cx, cy, bars);
+
+        const angleBetweenPoints = (2 * Math.PI) / bars;
 
         for (let i = 0; i < basePoints.length; i++) {
             const basePointA = basePoints[i];
@@ -87,26 +110,24 @@ export class MandalaService {
             const y3 = basePointB.y;
 
             const angle = i * angleBetweenPoints;
-            const controlX = this.cx + (seed - 0.5) * radius * 0.5;
-            const controlY = this.cy + (seed - 0.5) * radius * 0.5;
+            const controlX = cx + (seed - 0.5) * radius * 0.5;
+            const controlY = cy + (seed - 0.5) * radius * 0.5;
 
-            const dx = controlX - this.cx;
-            const dy = controlY - this.cy;
+            const dx = controlX - cx;
+            const dy = controlY - cy;
 
-            const rotatedControlX = this.cx + dx * Math.cos(angle) - dy * Math.sin(angle);
-            const rotatedControlY = this.cy + dx * Math.sin(angle) + dy * Math.cos(angle);
+            const rotatedControlX = cx + dx * Math.cos(angle) - dy * Math.sin(angle);
+            const rotatedControlY = cy + dx * Math.sin(angle) + dy * Math.cos(angle);
 
-            // Draw the original curve (A to MA)
             const path = document.createElementNS(svgNS, "path");
             path.setAttribute("d", `M${x1},${y1} Q${rotatedControlX},${rotatedControlY} ${x2},${y2}`);
             path.setAttribute("stroke", color);
             path.setAttribute("stroke-width", strokeWidth.toString());
             path.setAttribute("fill", `transparent`);
-            this.canvas.appendChild(path);
+            parent.appendChild(path);
 
-            // Calculate the reflection of the control point across the line from center to mirror point
-            const lineX1 = this.cx;
-            const lineY1 = this.cy;
+            const lineX1 = cx;
+            const lineY1 = cy;
             const lineX2 = x2;
             const lineY2 = y2;
 
@@ -123,13 +144,12 @@ export class MandalaService {
                     const reflectedX = pointX - (2 * a * (a * pointX + b * pointY + c)) / denominator;
                     const reflectedY = pointY - (2 * b * (a * pointX + b * pointY + c)) / denominator;
 
-                    // Draw the reversed curve (MA to B)
                     const reversedPath = document.createElementNS(svgNS, "path");
                     reversedPath.setAttribute("d", `M${x2},${y2} Q${reflectedX},${reflectedY} ${x3},${y3}`);
                     reversedPath.setAttribute("stroke", color);
                     reversedPath.setAttribute("stroke-width", strokeWidth.toString());
                     reversedPath.setAttribute("fill", `transparent`);
-                    this.canvas.appendChild(reversedPath);
+                    parent.appendChild(reversedPath);
                 }
             }
         }
