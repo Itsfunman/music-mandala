@@ -1,55 +1,13 @@
 import { AudioService } from './services/AudioService';
 import { MandalaComponent } from './components/MandalaComponent';
 import { DOMHelper } from './utils/DOMHelper';
+import { WebSocketService } from './services/WebSocketService';
 import type { Instrument } from './types';
-
-// WebSocket connection
-let ws: WebSocket | null = null;
-
-function initWebSocket(): void {
-  ws = new WebSocket('ws://localhost:8080');
-
-  ws.onopen = () => {
-    console.log('Connected to WebSocket server');
-  };
-
-  ws.onmessage = (event) => {
-    console.log('Message from ESP32:', event.data);
-    try {
-      const data = JSON.parse(event.data);
-      // Handle incoming data from ESP32
-      handleESP32Message(data);
-    } catch (e) {
-      console.log('Received non-JSON message:', event.data);
-    }
-  };
-
-  ws.onclose = () => {
-    console.log('Disconnected from WebSocket server');
-    // Reconnect after 3 seconds
-    setTimeout(initWebSocket, 3000);
-  };
-
-  ws.onerror = (error) => {
-    console.error('WebSocket error:', error);
-  };
-}
-
-function sendToESP32(data: object): void {
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify(data));
-  }
-}
-
-function handleESP32Message(data: { button?: boolean; potentiometer?: number }): void {
-  // Handle data received from ESP32
-  // For example: trigger sounds based on ESP32 input
-  console.log('ESP32 Data - Button:', data.button, 'Potentiometer:', data.potentiometer);
-}
 
 // Services
 const audioService = new AudioService();
 const domHelper = new DOMHelper();
+const wsService = new WebSocketService('ws://localhost:8080');
 let mandalaComponent: MandalaComponent;
 
 // State
@@ -59,8 +17,57 @@ let isPlaying = false;
 let bpm = 120;
 let intervalId: number | null = null;
 
+function getNextInstrument(): Instrument | null {
+  if (instruments.length === 0) {
+    return null;
+  }
+
+  const activeInstrument = currentInstrument;
+  const currentIndex = activeInstrument
+    ? instruments.findIndex(instrument => instrument.id === activeInstrument.id)
+    : -1;
+  const nextIndex = (currentIndex + 1) % instruments.length;
+  return instruments[nextIndex] ?? null;
+}
+
+function switchCurrentInstrument(): void {
+  const nextInstrument = getNextInstrument();
+
+  if (!nextInstrument) {
+    return;
+  }
+
+  openEditor(nextInstrument);
+  console.log('Instrument switched to:', nextInstrument.name);
+}
+
 async function init(): Promise<void> {
-  initWebSocket(); // Start WebSocket connection
+  // Connect WebSocket and set up handlers
+  wsService.connect().catch(console.error);
+  
+  wsService.onBPMChange((message) => {
+    bpm = message.value;
+    domHelper.updateBpmDisplay(bpm);
+    console.log('BPM changed to:', bpm);
+    // If music is playing, restart playLoop with new BPM
+    if (isPlaying && intervalId) {
+      clearInterval(intervalId);
+      playLoop();
+    }
+  });
+
+  wsService.onStepButton((message) => {
+    console.log(`Step ${message.step} button ${message.pressed ? 'pressed' : 'released'}`);
+  });
+
+  wsService.onInstrumentSwitch(() => {
+    switchCurrentInstrument();
+  });
+
+  wsService.onStatusChange((connected) => {
+    console.log(connected ? '✓ Connected to ESP32' : '✗ Disconnected from ESP32');
+  });
+
   createInstrumentButtons();
   mandalaComponent = new MandalaComponent(domHelper.getMandalaContainer());
   renderMandala();

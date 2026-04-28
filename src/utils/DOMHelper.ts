@@ -104,4 +104,9 @@ export class DOMHelper {
       }
     }
   }
+
+  public updateBpmDisplay(bpm: number): void {
+    this.bpmValue.textContent = bpm.toString();
+    this.bpmInput.value = bpm.toString();
+  }
 }
