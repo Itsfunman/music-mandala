@@ -62,11 +62,19 @@ async function init(): Promise<void> {
   wsService.onStepButton((message) => {
     console.log(`Step ${message.step} button ${message.pressed ? 'pressed' : 'released'}`);
     resetIdleTimer();
+
+    if (!isPlaying) {
+      playLoop();
+    }
   });
 
   wsService.onInstrumentSwitch(() => {
     switchCurrentInstrument();
     resetIdleTimer();
+
+    if (!isPlaying) {
+      playLoop();
+    }
   });
 
   wsService.onStatusChange((connected) => {
@@ -180,11 +188,17 @@ function playLoop(): void {
   resetIdleTimer();
 }
 
+function resetInstrumentPatterns(): void {
+  instruments.forEach(instrument => {
+    instrument.pattern = Array(16).fill(false);
+  });
+  renderMandala();
+}
+
 function setupEventListeners(): void {
   domHelper.onPlayClick(() => {
     if (!isPlaying) {
       playLoop();
-      isPlaying = true;
     }
   });
 
@@ -199,6 +213,7 @@ function setupEventListeners(): void {
 
   domHelper.onSaveClick(() => {
     saveMandala();
+    resetInstrumentPatterns();
     console.log('Mandala saved!');
   });
 
@@ -217,6 +232,11 @@ function setupEventListeners(): void {
   const resetEvents: Array<keyof DocumentEventMap> = ['click', 'keydown', 'mousemove', 'touchstart'];
   resetEvents.forEach((eventName) => {
     document.addEventListener(eventName, resetIdleTimer, { passive: true });
+    document.addEventListener(eventName, () => {
+      if (!isPlaying) {
+        playLoop();
+      }
+    }, { passive: true });
   });
 }
 
