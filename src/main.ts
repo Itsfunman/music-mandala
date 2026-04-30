@@ -1,6 +1,7 @@
 import { AudioService } from './services/AudioService';
 import { MandalaComponent } from './components/MandalaComponent';
 import { DOMHelper } from './utils/DOMHelper';
+import { MandalaService } from './services/MandalaService';
 import { WebSocketService } from './services/WebSocketService';
 import type { Instrument } from './types';
 
@@ -16,6 +17,10 @@ let currentInstrument: Instrument | null = null;
 let isPlaying = false;
 let bpm = 120;
 let intervalId: number | null = null;
+
+// Idle timeout management
+let idleTimeoutId: number | null = null;
+const IDLE_TIMEOUT = 30; // seconds
 
 function getNextInstrument(): Instrument | null {
   if (instruments.length === 0) {
@@ -80,6 +85,10 @@ async function init(): Promise<void> {
   });
 
   createInstrumentButtons();
+
+  currentInstrument = instruments.length > 0 ? instruments[0] : null;
+  openEditor(currentInstrument!);
+
   mandalaComponent = new MandalaComponent(domHelper.getMandalaContainer());
   renderMandala();
   setupEventListeners();
@@ -94,11 +103,11 @@ document.addEventListener('click', async () => {
 
 function createInstrumentButtons(): void {
     instruments = [
-        { id: 'kick', name: 'Kick', sound: () => audioService.createKick(), pattern: Array(16).fill(false) },
-        { id: 'snare', name: 'Snare', sound: () => audioService.createSnare(), pattern: Array(16).fill(false) },
-        { id: 'hiHat', name: 'Hi-Hat', sound: () => audioService.createHiHat(), pattern: Array(16).fill(false) },
-        { id: 'clap', name: 'Clap', sound: () => audioService.createClap(), pattern: Array(16).fill(false) },
-        { id: 'tom', name: 'Tom', sound: () => audioService.createTom(), pattern: Array(16).fill(false) }
+        { id: 'kick', name: 'Kick', sound: () => audioService.createKick(), pattern: Array(16).fill(false), icon: 'snare.svg' },
+        { id: 'snare', name: 'Snare', sound: () => audioService.createSnare(), pattern: Array(16).fill(false), icon: 'snare.svg' },
+        { id: 'hiHat', name: 'Hi-Hat', sound: () => audioService.createHiHat(), pattern: Array(16).fill(false), icon: 'hihat.svg' },
+        { id: 'clap', name: 'Clap', sound: () => audioService.createClap(), pattern: Array(16).fill(false), icon: 'snare.svg' },
+        { id: 'tom', name: 'Tom', sound: () => audioService.createTom(), pattern: Array(16).fill(false), icon: 'snare.svg' }
     ];
 
     domHelper.renderInstrumentButtons(instruments, openEditor);
@@ -106,13 +115,21 @@ function createInstrumentButtons(): void {
 
 function openEditor(instrument: Instrument): void {
   currentInstrument = instrument;
-  domHelper.openEditor(`Edit ${instrument.name}`);
-  const loopEditor = domHelper.renderLoopEditor(instrument.pattern, (newPattern) => {
-    instrument.pattern = newPattern;
-    console.log(`Pattern updated for ${instrument.id}:`, newPattern);
-    renderMandala();
-    loopEditor.updatePattern(newPattern);
-  });
+  const style = MandalaService.instrumentStyles[instrument.id as keyof typeof MandalaService.instrumentStyles];
+  const activeBg = style?.color;
+  const activeShadow = style?.color;
+
+  const loopEditor = domHelper.renderLoopEditor(
+    instrument.pattern,
+    (newPattern) => {
+      instrument.pattern = newPattern;
+      console.log(`Pattern updated for ${instrument.id}:`, newPattern);
+      renderMandala();
+      loopEditor.updatePattern(newPattern);
+    },
+    activeBg,
+    activeShadow
+  );
 }
 
 function saveMandala(): void {
@@ -137,10 +154,12 @@ function renderMandala(): void {
 
 function playLoop(): void {
   if (intervalId) clearInterval(intervalId);
+  isPlaying = true;
   const stepDuration = (60000 / bpm) / 4;
   let index = 0;
 
   renderMandala();
+  resetIdleTimer();
 
   intervalId = window.setInterval(() => {
     instruments.forEach(instrument => {
@@ -168,6 +187,27 @@ function resetInstrumentPatterns(): void {
   renderMandala();
 }
 
+function clearIdleTimer(): void {
+  if (idleTimeoutId !== null) {
+    clearTimeout(idleTimeoutId);
+    idleTimeoutId = null;
+  }
+}
+
+function resetIdleTimer(): void {
+  if (!isPlaying) return;
+  clearIdleTimer();
+  idleTimeoutId = window.setTimeout(() => {
+    if (isPlaying && intervalId) {
+      clearInterval(intervalId);
+      intervalId = null;
+      isPlaying = false;
+      console.log(`Stopped playback after ${IDLE_TIMEOUT} seconds of no input.`);
+    }
+    idleTimeoutId = null;
+  }, IDLE_TIMEOUT * 1000);
+}
+
 function setupEventListeners(): void {
   domHelper.onPlayClick(() => {
     if (!isPlaying) {
@@ -178,7 +218,9 @@ function setupEventListeners(): void {
   domHelper.onStopClick(() => {
     if (isPlaying && intervalId) {
       clearInterval(intervalId);
+      intervalId = null;
       isPlaying = false;
+      clearIdleTimer();
     }
   });
 
@@ -186,10 +228,6 @@ function setupEventListeners(): void {
     saveMandala();
     resetInstrumentPatterns();
     console.log('Mandala saved!');
-  });
-
-  domHelper.onCloseEditorClick(() => {
-    domHelper.closeEditor();
   });
 
   domHelper.renderBpmControl(bpm, (newBpm) => {
@@ -200,7 +238,7 @@ function setupEventListeners(): void {
     }
   });
 
-  const resetEvents: Array<keyof DocumentEventMap> = ['click', 'keydown', 'mousemove', 'touchstart'];
+  const resetEvents: Array<keyof DocumentEventMap> = ['click', 'keydown', 'touchstart'];
   resetEvents.forEach((eventName) => {
     document.addEventListener(eventName, resetIdleTimer, { passive: true });
     document.addEventListener(eventName, () => {

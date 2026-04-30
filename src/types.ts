@@ -3,6 +3,7 @@ export type Instrument = {
   name: string;
   sound: () => void;
   pattern: boolean[];
+  icon: string;
 };
 
 export type Song = {

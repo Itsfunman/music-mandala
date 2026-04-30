@@ -3,11 +3,10 @@ export class LoopEditor {
   private onPatternChange: (newPattern: boolean[]) => void;
   private container: HTMLElement;
 
-  constructor(pattern: boolean[], onPatternChange: (newPattern: boolean[]) => void) {
+  constructor(pattern: boolean[], onPatternChange: (newPattern: boolean[]) => void, container: HTMLElement) {
     this.pattern = pattern;
     this.onPatternChange = onPatternChange;
-    this.container = document.createElement('div');
-    this.container.className = 'loop-editor';
+    this.container = container;
     this.render();
   }
 
@@ -15,7 +14,7 @@ export class LoopEditor {
     this.container.innerHTML = '';
     this.pattern.forEach((isActive, index) => {
       const stepElement = document.createElement('div');
-      stepElement.textContent = isActive ? '🥁' : '⬜';
+      stepElement.className = 'loop-step';
       if (isActive) stepElement.classList.add('active');
 
       stepElement.addEventListener('click', () => {
