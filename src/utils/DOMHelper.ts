@@ -1,6 +1,7 @@
 import type { Instrument } from '../types';
 import { InstrumentButton } from '../components/InstrumentButton';
 import { LoopEditor } from '../components/LoopEditor';
+import { MandalaService } from '@/services/MandalaService';
 
 export class DOMHelper {
   private playButton: HTMLButtonElement;
@@ -30,13 +31,15 @@ export class DOMHelper {
     this.bpmInput = document.getElementById('bpm') as HTMLInputElement;
   }
 
-  public renderInstrumentButtons(instruments: Instrument[], onClick: (instrument: Instrument) => void): void {
+  public async renderInstrumentButtons(instruments: Instrument[], onClick: (instrument: Instrument) => void): Promise<void> {
     console.log('Rendering instrument buttons:', instruments);
     this.instrumentsContainer.innerHTML = '';
-    instruments.forEach(instrument => {
+    const buttons = instruments.map(async instrument => {
       const button = new InstrumentButton(instrument, onClick);
-      this.instrumentsContainer.appendChild(button.render());
+      return await button.render();
     });
+    const elements = await Promise.all(buttons);
+    elements.forEach(el => this.instrumentsContainer.appendChild(el));
     console.log('Instruments container after rendering:', this.instrumentsContainer.innerHTML);
   }
 
@@ -86,7 +89,13 @@ export class DOMHelper {
 
     if (instrumentElement) {
       if (isPlaying) {
+        const style = MandalaService.instrumentStyles[instrumentId as keyof typeof MandalaService.instrumentStyles];
+        const activeBg = style?.color;
+        const activeShadow = style?.color;
+
         instrumentElement.classList.add('instrument--playing');
+        instrumentElement.style.setProperty('--active-bg', activeBg || '#ffffff');
+        instrumentElement.style.setProperty('--active-shadow', activeShadow || '#ffffff');
       } else {
         instrumentElement.classList.remove('instrument--playing');
       }

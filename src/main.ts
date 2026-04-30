@@ -84,7 +84,7 @@ async function init(): Promise<void> {
     console.log(connected ? '✓ Connected to ESP32' : '✗ Disconnected from ESP32');
   });
 
-  createInstrumentButtons();
+  await createInstrumentButtons();
 
   currentInstrument = instruments.length > 0 ? instruments[0] : null;
   openEditor(currentInstrument!);

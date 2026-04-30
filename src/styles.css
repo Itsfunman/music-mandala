@@ -28,31 +28,27 @@ html {
 
 body {
   font-family: Arial, sans-serif;
-  min-height: 100vh;
+  height: 100vh;
   margin: 0;
-  padding: 20px;
   background: #2A2A2A;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-}
-
-img {
-  max-width: 100%;
-  height: auto;
+  justify-content: space-between;
 }
 
 .controls,
 .instruments,
 #mandala-container {
   width: 100%;
+  height: 100%;
   max-width: 1000px;
 }
 
 .controls {
   margin-bottom: 20px;
   display: flex;
+  flex: 1;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
@@ -62,36 +58,30 @@ img {
 .instruments {
   justify-content: center;
   display: flex;
-  flex-wrap: wrap;
+  flex: 1;
   gap: 8px;
   margin-bottom: 20px;
 }
 
 .instrument {
-  padding: 10px;
-  cursor: pointer;
-  transition: all 0.2s;
-  width: 80px;
-  height: 60px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: bold;
+  width: fit-content;
+  height: 100px;
 }
 
 .instrument:hover {
-  background: #e9e9e9;
+  transform: translateY(-2px);
 }
 
-.instrument--playing img {
-  animation: pulse 0.2s ease-out;
-  filter: drop-shadow(0px 0px 5px rgba(0, 0, 0, 0.3));
-  color: #4a045c;
+.instrument svg {
+  color: #353333;
+  filter: drop-shadow(4px 4px 0px rgba(0, 0, 0, 0.3));
 }
 
-.instrument--playing {
-  color: #4a045c;
+.instrument--playing svg {
+  filter: drop-shadow(0px 0px 20px var(--active-shadow, rgb(255, 255, 255)));
+  color: var(--active-bg, #ffffff);
 }
 
 .close-btn {
@@ -156,14 +146,14 @@ h2 {
 
 #mandala-container {
   margin-top: 20px;
-  width: 500px;
-  height: 500px;
+  flex: 6;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .loop-editor {
+  flex: 1;
   display: grid;
   grid-template-columns: repeat(16, minmax(40px, 1fr));
   gap: 4px;
