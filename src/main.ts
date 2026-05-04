@@ -197,6 +197,8 @@ function playLoop(): void {
   let index = 0;
   currentStep = index;
 
+  domHelper.hightlightStep(currentStep);
+
   renderMandala();
   resetIdleTimer();
   syncLedState(currentStep);
@@ -204,6 +206,7 @@ function playLoop(): void {
   intervalId = window.setInterval(() => {
     currentStep = index;
     syncLedState(currentStep);
+    domHelper.hightlightStep(currentStep);
 
     instruments.forEach(instrument => {
       if (instrument.pattern[index]) {

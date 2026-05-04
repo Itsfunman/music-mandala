@@ -102,6 +102,23 @@ export class DOMHelper {
     }
   }
 
+  public hightlightStep(step: number) : void 
+  {
+    const steps: HTMLElement[] = Array.from(this.editorLoopContainer.querySelectorAll('div'));
+    
+    // get all children of loop editor
+    steps.forEach((stepEl, index) => {
+      if (index === step) {
+
+        stepEl.classList.add('loop-step--playing');
+        stepEl.classList.remove('loop-step');
+      } else {
+        stepEl.classList.add('loop-step');
+        stepEl.classList.remove('loop-step--playing');
+      }
+    });
+  }
+
   public highlightSelectedInstrument(instrumentId: string | null, lastSelectedId: string | null): void {
     if (!instrumentId) return;
 

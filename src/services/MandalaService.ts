@@ -6,7 +6,7 @@ export class MandalaService {
     private canvasHeight = Number(this.canvas.getAttribute('height'));
     private cx = this.canvasWidth / 2;
     private cy = this.canvasHeight / 2;
-    private baseRadius = 100;
+    private baseRadius = 60;
     private bars = 8;
 
     public static instrumentStyles = {

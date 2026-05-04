@@ -176,6 +176,17 @@ h2 {
   box-shadow: 0px 0px 20px var(--active-shadow, rgba(0, 0, 0, 0.3));
 }
 
+.loop-step--playing {
+  margin: 5px;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  height: 80px;
+  width: 80px;
+  background: #ffffff;
+  box-shadow: 0px 0px 20px rgb(255, 255, 255);
+}
+
 
 .loop-step {
   margin: 5px;
@@ -187,3 +198,4 @@ h2 {
   background: #353333;
   box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
 }
+
