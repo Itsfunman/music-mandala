@@ -88,7 +88,7 @@ body {
   color: var(--active-bg, #ffffff);
 }
 
-.instrument--selected{
+.instrument--selected svg{
   filter: drop-shadow(0px 0px 10px var(--active-shadow, rgb(255, 255, 255)));
 }
 
@@ -172,7 +172,7 @@ h2 {
 }
 
 .loop-step.active {
-  background: var(--active-bg, #170b5e);
+  background: var(--active-bg, #2500fa);
   box-shadow: 0px 0px 20px var(--active-shadow, rgba(0, 0, 0, 0.3));
 }
 
