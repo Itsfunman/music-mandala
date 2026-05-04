@@ -5,16 +5,14 @@ const wss = new WebSocketServer({ port: 8080 });
 console.log('WebSocket server running on ws://localhost:8080');
 
 wss.on('connection', (ws) => {
-  console.log('Client connected');
+  console.log('Client connected', ws._socket.remoteAddress);
 
   ws.on('message', (message) => {
     const data = message.toString();
-    console.log('Received:', data);
 
     // Try to parse as JSON
     try {
       const json = JSON.parse(data);
-      console.log('JSON data:', json);
 
       // Broadcast to all clients (including ESP32 if connected)
       broadcast(json);
@@ -25,7 +23,7 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
-    console.log('Client disconnected');
+    console.log('Client disconnected', ws._socket.remoteAddress);
   });
 
   ws.on('error', (error) => {

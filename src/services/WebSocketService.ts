@@ -1,21 +1,17 @@
 import type { ESPSensorMessage, ESPCommandMessage, BPMMessage, StepButtonMessage, InstrumentSwitchMessage } from '../types';
 
-type GenericMessageHandler = (data: any) => void;
 type BPMMessageHandler = (message: BPMMessage) => void;
 type StepButtonHandler = (message: StepButtonMessage) => void;
 type InstrumentSwitchHandler = (message: InstrumentSwitchMessage) => void;
 type ConnectionStatusHandler = (connected: boolean) => void;
-type ErrorHandler = (error: Event) => void;
 
 export class WebSocketService {
   private ws: WebSocket | null = null;
   private url: string;
-  private messageHandlers: GenericMessageHandler[] = [];
   private bpmHandlers: BPMMessageHandler[] = [];
   private stepButtonHandlers: StepButtonHandler[] = [];
   private instrumentSwitchHandlers: InstrumentSwitchHandler[] = [];
   private statusHandlers: ConnectionStatusHandler[] = [];
-  private errorHandlers: ErrorHandler[] = [];
   private reconnectInterval: number = 3000;
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 5;
@@ -44,10 +40,8 @@ export class WebSocketService {
           try {
             const data = JSON.parse(event.data) as ESPSensorMessage;
             this.routeMessage(data);
-            this.notifyMessageHandlers(data);
           } catch (e) {
             console.log('Received non-JSON message:', event.data);
-            this.notifyMessageHandlers({ raw: event.data });
           }
         };
 
@@ -59,7 +53,6 @@ export class WebSocketService {
 
         this.ws.onerror = (error) => {
           console.error('WebSocket error:', error);
-          this.notifyErrorHandlers(error);
           reject(error);
         };
       } catch (error) {
@@ -81,38 +74,26 @@ export class WebSocketService {
   }
 
   /**
-   * Send BPM value to ESP32
+   * Send the full LED state to the ESP32 (active instrument pattern + playhead)
    */
-  public sendBPM(bpm: number): boolean {
-    return this.send({ type: 'bpm', value: bpm });
-  }
-
-  /**
-   * Send LED update to ESP32
-   */
-  public sendLEDUpdate(step: number, active: boolean): boolean {
-    if (step < 0 || step > 15) {
-      console.warn(`Invalid step number: ${step}. Must be 0-15`);
-      return false;
-    }
-    return this.send({ type: 'led', step, active });
-  }
-
-  /**
-   * Send all LED states at once
-   */
-  public sendLEDPattern(pattern: boolean[]): boolean {
+  public sendLEDState(step: number, playing: boolean, instrumentId: string, pattern: boolean[]): boolean {
     if (pattern.length !== 16) {
       console.warn(`Invalid pattern length: ${pattern.length}. Must be 16`);
       return false;
     }
-    let success = true;
-    pattern.forEach((active, step) => {
-      if (!this.sendLEDUpdate(step, active)) {
-        success = false;
-      }
+
+    if (step < -1 || step > 15) {
+      console.warn(`Invalid step number: ${step}. Must be -1 or 0-15`);
+      return false;
+    }
+
+    return this.send({
+      type: 'led_state',
+      step,
+      playing,
+      instrumentId,
+      pattern,
     });
-    return success;
   }
 
   /**
@@ -120,16 +101,6 @@ export class WebSocketService {
    */
   public sendDisplayUpdate(instrumentName: string): boolean {
     return this.send({ type: 'display', instrument: instrumentName });
-  }
-
-  /**
-   * Register a handler for all incoming messages
-   */
-  public onMessage(handler: GenericMessageHandler): () => void {
-    this.messageHandlers.push(handler);
-    return () => {
-      this.messageHandlers = this.messageHandlers.filter(h => h !== handler);
-    };
   }
 
   /**
@@ -169,16 +140,6 @@ export class WebSocketService {
     this.statusHandlers.push(handler);
     return () => {
       this.statusHandlers = this.statusHandlers.filter(h => h !== handler);
-    };
-  }
-
-  /**
-   * Register a handler for errors
-   */
-  public onError(handler: ErrorHandler): () => void {
-    this.errorHandlers.push(handler);
-    return () => {
-      this.errorHandlers = this.errorHandlers.filter(h => h !== handler);
     };
   }
 
@@ -234,19 +195,6 @@ export class WebSocketService {
   }
 
   /**
-   * Notify all generic message handlers
-   */
-  private notifyMessageHandlers(data: any): void {
-    this.messageHandlers.forEach(handler => {
-      try {
-        handler(data);
-      } catch (error) {
-        console.error('Error in message handler:', error);
-      }
-    });
-  }
-
-  /**
    * Notify all BPM handlers
    */
   private notifyBPMHandlers(data: BPMMessage): void {
@@ -298,16 +246,4 @@ export class WebSocketService {
     });
   }
 
-  /**
-   * Notify all error handlers
-   */
-  private notifyErrorHandlers(error: Event): void {
-    this.errorHandlers.forEach(handler => {
-      try {
-        handler(error);
-      } catch (err) {
-        console.error('Error in error handler:', err);
-      }
-    });
-  }
 }

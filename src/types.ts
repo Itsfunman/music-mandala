@@ -41,13 +41,15 @@ export type InstrumentSwitchMessage = {
 
 // Frontend to ESP32 Messages
 export type ESPCommandMessage =
-  | LEDControlMessage
+  | LEDStateMessage
   | DisplayUpdateMessage;
 
-export type LEDControlMessage = {
-  type: 'led';
-  step: number; // 0-15
-  active: boolean;
+export type LEDStateMessage = {
+  type: 'led_state';
+  step: number; // 0-15, -1 when cursor is hidden
+  playing: boolean;
+  instrumentId: string;
+  pattern: boolean[];
 };
 
 export type DisplayUpdateMessage = {

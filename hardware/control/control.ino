@@ -26,15 +26,59 @@ const int potThreshold = 50;
 int lastInstState = HIGH;
 int lastSaveState = HIGH;
 String currentInstrumentName = "Ready";
+String currentInstrumentId = "kick";
+int currentStep = -1;
+bool isPlaying = false;
+bool ledPattern[NUM_PIXELS] = { false };
+
+uint32_t getInstrumentColor(const String& instrumentId) {
+  if (instrumentId == "kick") return pixels.Color(255, 87, 51);
+  if (instrumentId == "snare") return pixels.Color(51, 255, 87);
+  if (instrumentId == "hiHat") return pixels.Color(51, 87, 255);
+  if (instrumentId == "clap") return pixels.Color(255, 146, 51);
+  if (instrumentId == "tom") return pixels.Color(255, 51, 243);
+  return pixels.Color(0, 0, 0);
+}
+
+void renderLeds() {
+  pixels.clear();
+
+  uint32_t instrumentColor = getInstrumentColor(currentInstrumentId);
+  for (int i = 0; i < NUM_PIXELS; i++) {
+    if (ledPattern[i]) {
+      pixels.setPixelColor(i, instrumentColor);
+    }
+  }
+
+  if (isPlaying && currentStep >= 0 && currentStep < NUM_PIXELS) {
+    pixels.setPixelColor(currentStep, pixels.Color(255, 255, 255));
+  }
+
+  pixels.show();
+}
 
 // --- WebSocket Inbound Handler ---
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
   if (type == WStype_TEXT) {
-    StaticJsonDocument<256> doc;
+    StaticJsonDocument<512> doc;
     DeserializationError error = deserializeJson(doc, payload);
     if (error) return;
 
     String msgType = doc["type"];
+
+    if (msgType == "led_state") {
+      currentStep = doc["step"].as<int>();
+      isPlaying = doc["playing"].as<bool>();
+      currentInstrumentId = doc["instrumentId"].as<String>();
+
+      JsonArray pattern = doc["pattern"].as<JsonArray>();
+      for (int i = 0; i < NUM_PIXELS; i++) {
+        ledPattern[i] = i < pattern.size() ? pattern[i].as<bool>() : false;
+      }
+
+      renderLeds();
+      return;
+    }
 
     // Update Display Name when Frontend switches instruments
     if (msgType == "display") {
@@ -72,10 +116,7 @@ void setup() {
   // 1. Initialize NeoPixels to Always White
   pixels.begin();
   pixels.setBrightness(30); // Keep brightness low for testing
-  for(int i=0; i<NUM_PIXELS; i++) {
-    pixels.setPixelColor(i, pixels.Color(255, 255, 255)); // White
-  }
-  pixels.show();
+  renderLeds();
 
   // 2. Initialize OLED
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {

@@ -1,5 +1,6 @@
 import { AudioService } from './services/AudioService';
 import { MandalaComponent } from './components/MandalaComponent';
+import { LoopEditor } from './components/LoopEditor';
 import { DOMHelper } from './utils/DOMHelper';
 import { MandalaService } from './services/MandalaService';
 import { WebSocketService } from './services/WebSocketService';
@@ -14,9 +15,11 @@ let mandalaComponent: MandalaComponent;
 // State
 let instruments: Instrument[] = [];
 let currentInstrument: Instrument | null = null;
+let currentLoopEditor: LoopEditor | null = null;
 let isPlaying = false;
 let bpm = 120;
 let intervalId: number | null = null;
+let currentStep = -1;
 
 // Idle timeout management
 let idleTimeoutId: number | null = null;
@@ -43,8 +46,19 @@ function switchCurrentInstrument(): void {
   }
 
   openEditor(nextInstrument);
-  wsService.sendDisplayUpdate(nextInstrument.name);
+  if (wsService.isConnected()) {
+    wsService.sendDisplayUpdate(nextInstrument.name);
+  }
   console.log('Instrument switched to:', nextInstrument.name);
+}
+
+function syncLedState(step: number = -1): void {
+  if (!currentInstrument || !wsService.isConnected()) {
+    return;
+  }
+
+  const activeStep = isPlaying ? step : -1;
+  wsService.sendLEDState(activeStep, isPlaying, currentInstrument.id, currentInstrument.pattern);
 }
 
 async function init(): Promise<void> {
@@ -64,10 +78,20 @@ async function init(): Promise<void> {
 
   wsService.onStepButton((message) => {
     console.log(`Step ${message.step} button ${message.pressed ? 'pressed' : 'released'}`);
-    resetIdleTimer();
+    if (message.pressed && currentInstrument) {
+      const nextPattern = [...currentInstrument.pattern];
+      nextPattern[message.step] = !nextPattern[message.step];
+      currentInstrument.pattern = nextPattern;
+      renderMandala();
+      syncLedState(currentStep);
 
-    if (!isPlaying) {
-      playLoop();
+      if (currentLoopEditor) {
+        currentLoopEditor.updatePattern(nextPattern);
+      }
+
+      if (isPlaying) {
+        resetIdleTimer();
+      }
     }
   });
 
@@ -82,6 +106,13 @@ async function init(): Promise<void> {
 
   wsService.onStatusChange((connected) => {
     console.log(connected ? '✓ Connected to ESP32' : '✗ Disconnected from ESP32');
+
+    if (connected) {
+      syncLedState(currentStep);
+      if (currentInstrument) {
+        wsService.sendDisplayUpdate(currentInstrument.name);
+      }
+    }
   });
 
   await createInstrumentButtons();
@@ -125,11 +156,16 @@ function openEditor(instrument: Instrument): void {
       instrument.pattern = newPattern;
       console.log(`Pattern updated for ${instrument.id}:`, newPattern);
       renderMandala();
+      syncLedState(currentStep);
       loopEditor.updatePattern(newPattern);
     },
     activeBg,
     activeShadow
   );
+
+  currentLoopEditor = loopEditor;
+
+  syncLedState(currentStep);
 }
 
 function saveMandala(): void {
@@ -157,11 +193,16 @@ function playLoop(): void {
   isPlaying = true;
   const stepDuration = (60000 / bpm) / 4;
   let index = 0;
+  currentStep = index;
 
   renderMandala();
   resetIdleTimer();
+  syncLedState(currentStep);
 
   intervalId = window.setInterval(() => {
+    currentStep = index;
+    syncLedState(currentStep);
+
     instruments.forEach(instrument => {
       if (instrument.pattern[index]) {
         instrument.sound();
@@ -185,6 +226,7 @@ function resetInstrumentPatterns(): void {
     instrument.pattern = Array(16).fill(false);
   });
   renderMandala();
+  syncLedState(currentStep);
 }
 
 function clearIdleTimer(): void {
@@ -202,6 +244,8 @@ function resetIdleTimer(): void {
       clearInterval(intervalId);
       intervalId = null;
       isPlaying = false;
+      currentStep = -1;
+      syncLedState(currentStep);
       console.log(`Stopped playback after ${IDLE_TIMEOUT} seconds of no input.`);
     }
     idleTimeoutId = null;
@@ -220,6 +264,8 @@ function setupEventListeners(): void {
       clearInterval(intervalId);
       intervalId = null;
       isPlaying = false;
+      currentStep = -1;
+      syncLedState(currentStep);
       clearIdleTimer();
     }
   });
