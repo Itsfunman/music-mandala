@@ -103,17 +103,19 @@ document.addEventListener('click', async () => {
 
 function createInstrumentButtons(): void {
     instruments = [
-        { id: 'kick', name: 'Kick', sound: () => audioService.createKick(), pattern: Array(16).fill(false), icon: 'snare.svg' },
+        { id: 'kick', name: 'Kick', sound: () => audioService.createKick(), pattern: Array(16).fill(false), icon: 'kick.svg' },
         { id: 'snare', name: 'Snare', sound: () => audioService.createSnare(), pattern: Array(16).fill(false), icon: 'snare.svg' },
         { id: 'hiHat', name: 'Hi-Hat', sound: () => audioService.createHiHat(), pattern: Array(16).fill(false), icon: 'hihat.svg' },
-        { id: 'clap', name: 'Clap', sound: () => audioService.createClap(), pattern: Array(16).fill(false), icon: 'snare.svg' },
-        { id: 'tom', name: 'Tom', sound: () => audioService.createTom(), pattern: Array(16).fill(false), icon: 'snare.svg' }
+        { id: 'clap', name: 'Clap', sound: () => audioService.createClap(), pattern: Array(16).fill(false), icon: 'clap.svg' },
+        { id: 'tom', name: 'Tom', sound: () => audioService.createTom(), pattern: Array(16).fill(false), icon: 'tom.svg' }
     ];
 
     domHelper.renderInstrumentButtons(instruments, openEditor);
 }
 
 function openEditor(instrument: Instrument): void {
+  domHelper.highlightSelectedInstrument(instrument.id, currentInstrument?.id || null);
+
   currentInstrument = instrument;
   const style = MandalaService.instrumentStyles[instrument.id as keyof typeof MandalaService.instrumentStyles];
   const activeBg = style?.color;
@@ -236,16 +238,6 @@ function setupEventListeners(): void {
       clearInterval(intervalId!);
       playLoop();
     }
-  });
-
-  const resetEvents: Array<keyof DocumentEventMap> = ['click', 'keydown', 'touchstart'];
-  resetEvents.forEach((eventName) => {
-    document.addEventListener(eventName, resetIdleTimer, { passive: true });
-    document.addEventListener(eventName, () => {
-      if (!isPlaying) {
-        playLoop();
-      }
-    }, { passive: true });
   });
 }
 

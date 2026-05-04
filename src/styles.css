@@ -55,6 +55,10 @@ body {
   justify-content: center;
 }
 
+.controls--disabled{
+  display: none;
+}
+
 .instruments {
   justify-content: center;
   display: flex;
@@ -82,6 +86,10 @@ body {
 .instrument--playing svg {
   filter: drop-shadow(0px 0px 20px var(--active-shadow, rgb(255, 255, 255)));
   color: var(--active-bg, #ffffff);
+}
+
+.instrument--selected{
+  filter: drop-shadow(0px 0px 10px var(--active-shadow, rgb(255, 255, 255)));
 }
 
 .close-btn {

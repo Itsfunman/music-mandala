@@ -102,6 +102,29 @@ export class DOMHelper {
     }
   }
 
+  public highlightSelectedInstrument(instrumentId: string | null, lastSelectedId: string | null): void {
+    if (!instrumentId) return;
+
+    const instrumentElement = this.instrumentsContainer.querySelector(`.instrument[data-id="${instrumentId}"]`) as HTMLElement;
+
+    if (!instrumentElement) {
+      return;
+    }
+
+    const style = MandalaService.instrumentStyles[instrumentId as keyof typeof MandalaService.instrumentStyles];
+    const activeShadow = style?.color;
+
+    instrumentElement.classList.add('instrument--selected');
+    instrumentElement.style.setProperty('--active-shadow', activeShadow || '#ffffff');
+
+    if (lastSelectedId) {
+      const lastSelectedElement = this.instrumentsContainer.querySelector(`.instrument[data-id="${lastSelectedId}"]`) as HTMLElement;
+      if (lastSelectedElement) {
+        lastSelectedElement.classList.remove('instrument--selected');
+      }
+    }
+  }
+
   public updateBpmDisplay(bpm: number): void {
     this.bpmValue.textContent = bpm.toString();
     this.bpmInput.value = bpm.toString();

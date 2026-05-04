@@ -6,15 +6,15 @@ export class MandalaService {
     private canvasHeight = Number(this.canvas.getAttribute('height'));
     private cx = this.canvasWidth / 2;
     private cy = this.canvasHeight / 2;
-    private baseRadius = 30;
+    private baseRadius = 100;
     private bars = 8;
 
     public static instrumentStyles = {
-        kick: { color: 'rgba(255, 87, 51, 0.9)', strokeWidth: 1 },
-        snare: { color: 'rgba(51, 255, 87, 0.9)', strokeWidth: 1 },
-        hiHat: { color: 'rgba(51, 87, 255, 0.9)', strokeWidth: 1 },
-        clap: { color: 'rgba(255, 146, 51, 0.9)', strokeWidth: 1 },
-        tom: { color: 'rgba(255, 51, 243, 0.9)', strokeWidth: 1 }
+        kick: { color: 'rgba(255, 87, 51, 0.9)', strokeWidth: 3 },
+        snare: { color: 'rgba(51, 255, 87, 0.9)', strokeWidth: 3 },
+        hiHat: { color: 'rgba(51, 87, 255, 0.9)', strokeWidth: 3 },
+        clap: { color: 'rgba(255, 146, 51, 0.9)', strokeWidth: 3 },
+        tom: { color: 'rgba(255, 51, 243, 0.9)', strokeWidth: 3 }
     };
 
     public generateMandala(instruments: Instrument[]): HTMLElement {
