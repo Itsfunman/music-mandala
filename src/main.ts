@@ -288,6 +288,16 @@ function setupEventListeners(): void {
       playLoop();
     }
   });
+
+  // Toggle controls with 'c' key
+  document.addEventListener('keydown', (event) => {
+    if (event.key.toLowerCase() === 'c') {
+      const controlsDiv = document.querySelector('.controls') as HTMLElement;
+      if (controlsDiv) {
+        controlsDiv.classList.toggle('controls--disabled');
+      }
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
