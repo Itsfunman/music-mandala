@@ -13,7 +13,7 @@ wss.on('connection', (ws) => {
     // Try to parse as JSON
     try {
       const json = JSON.parse(data);
-
+      console.log('Received JSON:', json);
       // Broadcast to all clients (including ESP32 if connected)
       broadcast(json);
     } catch (e) {
