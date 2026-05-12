@@ -10,6 +10,7 @@
 const int POTTY_PIN = 32;       
 const int BUTTON_INST = 25;     
 const int BUTTON_SAVE = 26;     
+const int BUTTON_RESET = 27;    
 const int NEOPIXEL_PIN = 12;    
 const int NUM_PIXELS = 16;      
 
@@ -25,6 +26,7 @@ int lastPotValue = 0;
 const int potThreshold = 50; 
 int lastInstState = HIGH;
 int lastSaveState = HIGH;
+int lastResetState = HIGH;
 String currentInstrumentName = "Ready";
 String currentInstrumentId = "kick";
 int currentStep = -1;
@@ -127,6 +129,7 @@ void setup() {
   // 3. Initialize Buttons
   pinMode(BUTTON_INST, INPUT_PULLUP);
   pinMode(BUTTON_SAVE, INPUT_PULLUP);
+  pinMode(BUTTON_RESET, INPUT_PULLUP);
 
   // 4. Connectivity
   WiFi.begin("routy", "routytoor");
@@ -160,6 +163,18 @@ void loop() {
     delay(50);
   }
   lastSaveState = currentSaveState;
+
+  // --- Reset Button ---
+  int currentResetState = digitalRead(BUTTON_RESET);
+  if (currentResetState == LOW && lastResetState == HIGH) {
+    StaticJsonDocument<100> doc;
+    doc["type"] = "reset";
+    String out;
+    serializeJson(doc, out);
+    webSocket.sendTXT(out);
+    delay(50);
+  }
+  lastResetState = currentResetState;
 
   // --- Potentiometer (BPM) ---
   int currentPotValue = analogRead(POTTY_PIN);
