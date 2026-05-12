@@ -74,7 +74,7 @@ async function init(): Promise<void> {
     // If music is playing, restart playLoop with new BPM
     if (isPlaying && intervalId) {
       clearInterval(intervalId);
-      playLoop();
+      playLoop(currentStep);
     }
   });
 
@@ -204,11 +204,11 @@ function renderMandala(): void {
   }
 }
 
-function playLoop(): void {
+function playLoop(previousStep: number = 0): void {
   if (intervalId) clearInterval(intervalId);
   isPlaying = true;
   const stepDuration = (60000 / bpm) / 4;
-  let index = 0;
+  let index = Math.max(previousStep, 0);
   currentStep = index;
 
   domHelper.hightlightStep(currentStep);
@@ -306,7 +306,7 @@ function setupEventListeners(): void {
     bpm = newBpm;
     if (isPlaying) {
       clearInterval(intervalId!);
-      playLoop();
+      playLoop(currentStep);
     }
   });
 
