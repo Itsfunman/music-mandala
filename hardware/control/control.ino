@@ -130,7 +130,7 @@ void setup() {
 
   // 4. Connectivity
   WiFi.begin("routy", "routytoor");
-  webSocket.begin("192.168.1.191", 8080, "/");
+  webSocket.begin("10.42.0.1", 8080, "/");
   webSocket.onEvent(webSocketEvent);
 }
 

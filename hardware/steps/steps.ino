@@ -4,15 +4,17 @@
 
 const char* WIFI_SSID = "routy";
 const char* WIFI_PASSWORD = "routytoor";
-const char* WS_HOST = "192.168.1.191";
+const char* WS_HOST = "10.42.0.1";
 const uint16_t WS_PORT = 8080;
 
 const int BUTTON_PINS[16] = {
-  4, 5, 12, 13,
-  14, 15, 16, 17,
-  18, 19, 21, 22,
-  23, 25, 26, 27
+  4, 5, 13, 14,
+  16, 17, 18, 19, 
+  21, 22, 23,
+  25, 26, 27,
+  32, 33
 };
+
 
 const unsigned long DEBOUNCE_DELAY_MS = 40;
 
