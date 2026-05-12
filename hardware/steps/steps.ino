@@ -2,8 +2,8 @@
 #include <WebSocketsClient.h>
 #include <ArduinoJson.h>
 
-const char* WIFI_SSID = "routy";
-const char* WIFI_PASSWORD = "routytoor";
+const char* WIFI_SSID = "raspy";
+// const char* WIFI_PASSWORD = "raspytoor";
 const char* WS_HOST = "10.42.0.1";
 const uint16_t WS_PORT = 8080;
 
@@ -58,7 +58,7 @@ void setup() {
     lastChangeAt[i] = 0;
   }
 
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  WiFi.begin(WIFI_SSID);//, WIFI_PASSWORD);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
   }

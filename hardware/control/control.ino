@@ -23,7 +23,7 @@ WebSocketsClient webSocket;
 
 // --- State Variables ---
 int lastPotValue = 0;
-const int potThreshold = 50; 
+const int potThreshold = 256; 
 int lastInstState = HIGH;
 int lastSaveState = HIGH;
 int lastResetState = HIGH;
@@ -135,9 +135,14 @@ void setup() {
   pinMode(BUTTON_RESET, INPUT_PULLUP);
 
   // 4. Connectivity
-  WiFi.begin("routy", "routytoor");
+  WiFi.begin("raspy");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
   webSocket.begin("10.42.0.1", 8080, "/");
-  webSocket.onEvent(webSocketEvent);
+  webSocket.onEvent(webSocketEvent);  
 }
 
 void loop() {
