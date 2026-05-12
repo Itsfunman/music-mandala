@@ -1,8 +1,68 @@
+import { AudioService } from './services/AudioService';
 import { MandalaService } from './services/MandalaService';
+import { SongService } from './services/SongService';
+import { Song } from './types';
 import { instrumentStyles as styles } from './utils/InstrumentStyles';
 
 const container = document.getElementById('history-container') as HTMLDivElement;
 const historySeeds: string[] = JSON.parse(localStorage.getItem('mandala-history') || '[]');
+
+const audioService = new AudioService();
+const songService = new SongService();
+
+let currentStep = -1;
+let intervalId: number | null = null;
+
+let currentSong: Song = {
+    id: '',
+    name: '',
+    instruments: [],
+    bpm: 120
+};
+
+function playLoop(): void {
+  const stepDuration = (60000 / currentSong.bpm) / 4;
+  let index = 0;
+  currentStep = index;
+
+  intervalId = window.setInterval(() => {
+    currentStep = index;
+
+    currentSong.instruments.forEach(instrument => {
+      if (instrument.pattern[index]) {
+        const sound = getInstrumentSound(instrument.id);
+        if (sound) {
+            sound();
+        }
+      }
+    });
+
+    index = (index + 1) % 16;
+  }, stepDuration);
+}
+
+async function updateCurrentSong(id: string)
+{
+    currentSong = await songService.loadSong(id) || currentSong;
+    playLoop();
+}
+
+function getInstrumentSound(instrumentId: string): (() => void) | null {
+  switch (instrumentId) {
+    case 'kick':
+      return audioService.createKick.bind(audioService);
+    case 'snare':
+      return audioService.createSnare.bind(audioService);
+    case 'hihat':
+      return audioService.createHiHat.bind(audioService);
+    case 'clap':
+      return audioService.createClap.bind(audioService);
+    case 'tom':
+      return audioService.createTom.bind(audioService);
+    default:
+      return null;
+  }
+}
 
 // --- CONFIGURATION ---
 const MANDALA_SIZE_PERCENT = 0.3;
@@ -131,6 +191,7 @@ function addMandala(seed: string) {
     svg.setAttribute('height', '100%');
 
     renderMandalaFromSeed(svg, seed);
+    wrapper.addEventListener('click', () => updateCurrentSong(seed))
 
     wrapper.appendChild(svg);
     container.appendChild(wrapper);
@@ -207,3 +268,16 @@ setInterval(() => {
         lastKnownCount = currentHistory.length;
     }
 }, 1000);
+
+document.addEventListener('DOMContentLoaded', async () => {
+  console.log('DOM fully loaded and parsed');
+  currentSong = await songService.loadSong(historySeeds[0]) || currentSong;
+  console.log('Loaded song:', currentSong);
+});
+
+document.addEventListener('click', async () => {
+  if (!audioService['isAudioStarted']) {
+    await audioService.startAudio();
+    console.log('Audio started after user interaction');
+  }
+}, { once: true });

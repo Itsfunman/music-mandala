@@ -3,11 +3,13 @@ import { MandalaComponent } from './components/MandalaComponent';
 import { LoopEditor } from './components/LoopEditor';
 import { DOMHelper } from './utils/DOMHelper';
 import { WebSocketService } from './services/WebSocketService';
-import type { Instrument } from './types';
+import type { Instrument, Song } from './types';
 import { instrumentStyles } from './utils/InstrumentStyles';
+import { SongService } from './services/SongService';
 
 // Services
 const audioService = new AudioService();
+const songService = new SongService();
 const domHelper = new DOMHelper();
 const wsService = new WebSocketService('ws://localhost:8080');
 let mandalaComponent: MandalaComponent;
@@ -173,10 +175,19 @@ function openEditor(instrument: Instrument): void {
   syncLedState(currentStep);
 }
 
-function saveMandala(): void {
+async function saveMandala(): Promise<void> {
   const seed = instruments.map(inst => inst.pattern.map(b => (b ? '1' : '0')).join('')).join('|');
   const history: string[] = JSON.parse(localStorage.getItem('mandala-history') ?? '[]');
 
+  const song : Song = {
+    id: seed,
+    name: `Mandala ${new Date().toLocaleString()}`,
+    instruments: JSON.parse(JSON.stringify(instruments)), // Deep copy to avoid mutation
+    bpm
+  };
+
+  await songService.saveSong(song);
+  
   // Avoid saving duplicates consecutively
   if (history[history.length - 1] === seed) return;
 
