@@ -124,6 +124,9 @@ void setup() {
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     Serial.println(F("OLED failed"));
   }
+  // Rotate display 180 degrees
+  display.setRotation(2);
+
   updateDisplay(analogRead(POTTY_PIN));
 
   // 3. Initialize Buttons
