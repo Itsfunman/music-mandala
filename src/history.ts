@@ -1,4 +1,5 @@
 import { MandalaService } from './services/MandalaService';
+import { instrumentStyles as styles } from './utils/InstrumentStyles';
 
 const container = document.getElementById('history-container') as HTMLDivElement;
 const historySeeds: string[] = JSON.parse(localStorage.getItem('mandala-history') || '[]');
@@ -13,7 +14,7 @@ const FLIGHT_SPEED = 1.0;    // Multiplier for movement speed (e.g., 2.0 is twic
 const ROTATION_SPEED = 1.0;  // Base rotation speed in degrees per frame
 // ---------------------
 
-const instrumentStyles = Object.values(MandalaService.instrumentStyles).map(style => ({
+const instrumentStyles = Object.values(styles).map(style => ({
     ...style,
     strokeWidth: MANDALA_LINE_THICKNESS
 }));

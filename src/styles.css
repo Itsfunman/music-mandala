@@ -1,13 +1,27 @@
+:root {
+  --primary-bg: #2A2A2A;
+  --secondary-bg: #3d3d3d;
+  --accent: #4CAF50;
+  --accent-hover: #45a049;
+  --text: #333;
+  --light-gray: #d6d6d6;
+  --light-shadow: rgb(209, 209, 209);
+  --shadow: rgba(0, 0, 0, 0.3);
+  --active-bg: #2500fa;
+  --active-shadow: rgb(255, 255, 255);
+  --white: #ffffff;
+  --black: #000000;
+}
 editor-window {
   position: fixed;
   top: 5%;
   left: 5%;
   width: 90%;
   height: 90%;
-  background: white;
+  background: var(--white);
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 5px 15px var(--shadow);
   z-index: 100;
   display: none;
   overflow: auto;
@@ -30,7 +44,7 @@ body {
   font-family: Arial, sans-serif;
   height: 100vh;
   margin: 0;
-  background: #2A2A2A;
+  background: var(--primary-bg);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -79,8 +93,8 @@ body {
 }
 
 .instrument svg {
-  color: #353333;
-  filter: drop-shadow(4px 4px 0px rgba(0, 0, 0, 0.3));
+  color: var(--secondary-bg);
+  filter: drop-shadow(4px 4px 0px var(--shadow));
 }
 
 .instrument--playing svg {
@@ -100,25 +114,25 @@ body {
   border: none;
   font-size: 24px;
   cursor: pointer;
-  color: #666;
+  color: var(--text);
 }
 
 .close-btn:hover {
-  color: #333;
+  color: var(--text);
 }
 
 button {
   padding: 10px 20px;
   cursor: pointer;
   font-size: 16px;
-  background: #4CAF50;
+  background: var(--accent);
   color: white;
   border: none;
   transition: background 0.2s;
 }
 
 button:hover {
-  background: #45a049;
+  background: var(--accent-hover);
 }
 
 #bpm {
@@ -127,7 +141,7 @@ button:hover {
 
 h2 {
   margin-top: 0;
-  color: #333;
+  color: var(--text);
 }
 
 .bpm-control {
@@ -183,7 +197,7 @@ h2 {
   user-select: none;
   height: 80px;
   width: 80px;
-  background: #d6d6d6;
+  background: var(--light-gray);
   box-shadow: 0px 0px 20px rgb(209, 209, 209);
 }
 
@@ -195,7 +209,7 @@ h2 {
   user-select: none;
   height: 80px;
   width: 80px;
-  background: #353333;
-  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
+  background: var(--secondary-bg);
+  box-shadow: 4px 4px 0px var(--shadow);
 }
 

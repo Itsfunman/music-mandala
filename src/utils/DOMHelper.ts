@@ -2,6 +2,7 @@ import type { Instrument } from '../types';
 import { InstrumentButton } from '../components/InstrumentButton';
 import { LoopEditor } from '../components/LoopEditor';
 import { MandalaService } from '@/services/MandalaService';
+import { instrumentStyles } from './InstrumentStyles';
 
 export class DOMHelper {
   private playButton: HTMLButtonElement;
@@ -89,7 +90,7 @@ export class DOMHelper {
 
     if (instrumentElement) {
       if (isPlaying) {
-        const style = MandalaService.instrumentStyles[instrumentId as keyof typeof MandalaService.instrumentStyles];
+        const style = instrumentStyles[instrumentId as keyof typeof instrumentStyles];
         const activeBg = style?.color;
         const activeShadow = style?.color;
 
@@ -128,13 +129,13 @@ export class DOMHelper {
       return;
     }
 
-    const style = MandalaService.instrumentStyles[instrumentId as keyof typeof MandalaService.instrumentStyles];
+    const style = instrumentStyles[instrumentId as keyof typeof instrumentStyles];
     const activeShadow = style?.color;
 
     instrumentElement.classList.add('instrument--selected');
     instrumentElement.style.setProperty('--active-shadow', activeShadow || '#ffffff');
 
-    if (lastSelectedId) {
+    if (lastSelectedId && lastSelectedId !== instrumentId) {
       const lastSelectedElement = this.instrumentsContainer.querySelector(`.instrument[data-id="${lastSelectedId}"]`) as HTMLElement;
       if (lastSelectedElement) {
         lastSelectedElement.classList.remove('instrument--selected');

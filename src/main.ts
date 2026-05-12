@@ -2,9 +2,9 @@ import { AudioService } from './services/AudioService';
 import { MandalaComponent } from './components/MandalaComponent';
 import { LoopEditor } from './components/LoopEditor';
 import { DOMHelper } from './utils/DOMHelper';
-import { MandalaService } from './services/MandalaService';
 import { WebSocketService } from './services/WebSocketService';
 import type { Instrument } from './types';
+import { instrumentStyles } from './utils/InstrumentStyles';
 
 // Services
 const audioService = new AudioService();
@@ -117,8 +117,10 @@ async function init(): Promise<void> {
 
   await createInstrumentButtons();
 
-  currentInstrument = instruments.length > 0 ? instruments[0] : null;
-  openEditor(currentInstrument!);
+  const initialInstrument = instruments.length > 0 ? instruments[0] : null;
+  if (initialInstrument) {
+    openEditor(initialInstrument);
+  }
 
   mandalaComponent = new MandalaComponent(domHelper.getMandalaContainer());
   renderMandala();
@@ -132,7 +134,7 @@ document.addEventListener('click', async () => {
   }
 }, { once: true });
 
-function createInstrumentButtons(): void {
+async function createInstrumentButtons(): Promise<void> {
     instruments = [
         { id: 'kick', name: 'Kick', sound: () => audioService.createKick(), pattern: Array(16).fill(false), icon: 'kick.svg' },
         { id: 'snare', name: 'Snare', sound: () => audioService.createSnare(), pattern: Array(16).fill(false), icon: 'snare.svg' },
@@ -141,14 +143,15 @@ function createInstrumentButtons(): void {
         { id: 'tom', name: 'Tom', sound: () => audioService.createTom(), pattern: Array(16).fill(false), icon: 'tom.svg' }
     ];
 
-    domHelper.renderInstrumentButtons(instruments, openEditor);
+    await domHelper.renderInstrumentButtons(instruments, openEditor);
 }
 
 function openEditor(instrument: Instrument): void {
-  domHelper.highlightSelectedInstrument(instrument.id, currentInstrument?.id || null);
+  const previousInstrumentId = currentInstrument?.id || null;
+  domHelper.highlightSelectedInstrument(instrument.id, previousInstrumentId);
 
   currentInstrument = instrument;
-  const style = MandalaService.instrumentStyles[instrument.id as keyof typeof MandalaService.instrumentStyles];
+  const style = instrumentStyles[instrument.id as keyof typeof instrumentStyles];
   const activeBg = style?.color;
   const activeShadow = style?.color;
 
@@ -257,6 +260,13 @@ function resetIdleTimer(): void {
   }, IDLE_TIMEOUT * 1000);
 }
 
+function disableControls(): void {
+  const controlsDiv = document.querySelector('.controls') as HTMLElement;
+  if (controlsDiv) {
+    controlsDiv.classList.toggle('controls--disabled');
+  }
+}
+
 function setupEventListeners(): void {
   domHelper.onPlayClick(() => {
     if (!isPlaying) {
@@ -292,10 +302,7 @@ function setupEventListeners(): void {
   // Toggle controls with 'c' key
   document.addEventListener('keydown', (event) => {
     if (event.key.toLowerCase() === 'c') {
-      const controlsDiv = document.querySelector('.controls') as HTMLElement;
-      if (controlsDiv) {
-        controlsDiv.classList.toggle('controls--disabled');
-      }
+      disableControls();
     }
   });
 }
