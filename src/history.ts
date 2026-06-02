@@ -145,7 +145,7 @@ function createVinylBackground(svg: SVGSVGElement, cx: number, cy: number, radiu
         grooveCircle.setAttribute("r", (radius - i * grooveSpacing).toString());
 
         grooveCircle.setAttribute("fill", "none");
-        grooveCircle.setAttribute("stroke", "rgba(255,255,255,0.08)");
+        grooveCircle.setAttribute("stroke", "rgb(85, 77, 77)");
         grooveCircle.setAttribute("stroke-width", "1.2");
 
         svg.appendChild(grooveCircle);
