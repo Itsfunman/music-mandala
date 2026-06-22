@@ -36,7 +36,8 @@ export class MandalaService {
             }
 
             // Use the pattern decimal as a seed with a random offset
-            const lineSeed = (patternDecimal % 1000) / 1000;
+            const rng = this.mulberry32(patternDecimal);
+            const lineSeed = rng();
             console.log(`Line seed for ${instrument.id}:`, lineSeed); // Debug log
             const currentRadius = this.baseRadius + i * radiusStep;
 
@@ -147,4 +148,15 @@ export class MandalaService {
             }
         }
     }
+
+    private mulberry32(seed: number): () => number {
+        let t = seed;
+        return function() {
+            t = (t + 0x6D2B79F5) | 0;
+            t = Math.imul(t ^ (t >>> 15), t | 1);
+            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
 }
+
